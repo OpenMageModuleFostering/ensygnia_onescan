@@ -266,7 +266,7 @@
  				$payload->Tax = 0;
 			}
 			$payload->ProductAmount = $totals['subtotal']->getValue()-$payload->Tax;
-			$payload->PaymentAmount = $totals['grand_total']->getValue();
+			$payload->PaymentAmount = $totals['subtotal']->getValue();
 			$payload->Currency = Mage::app()->getStore($storeid)->getCurrentCurrencyCode();
 	
 			$payload->Requires = new PaymentOptIns();
