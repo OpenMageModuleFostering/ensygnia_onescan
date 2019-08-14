@@ -19,7 +19,7 @@
 <config>    
     <modules>
         <Ensygnia_Onescan>
-            <version>1.0.11</version>
+            <version>1.0.12</version>
         </Ensygnia_Onescan>
     </modules>
     <global>
@@ -70,6 +70,7 @@
 				<onescan_register-success-message>You have successfully registered using Onescan. We have sent you an email with your login details should you ever need to log in "manually".</onescan_register-success-message>
 				<onescan_skip-confirmation>1</onescan_skip-confirmation>
 				<onescan_email-exists-message>Email address already registered, please log in using Onescan.</onescan_email-exists-message>
+				<onescan_unknown-region-message>The county/state/region you supplied is not known, please edit your address.</onescan_unknown-region-message>
 				<onescan_cannot-deliver-message>We cannot deliver your order to the address you supplied.</onescan_cannot-deliver-message>
 				<onescan_login-success-message>You have successfully logged in using Onescan.</onescan_login-success-message>
 				<onescan_email-not-confirmed-message>This account is not confirmed. &lt;a href="%s"&gt;Click here&lt;/a&gt; to resend confirmation email.</onescan_email-not-confirmed-message>

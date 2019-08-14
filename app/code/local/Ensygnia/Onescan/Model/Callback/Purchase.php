@@ -23,6 +23,7 @@
 			return 'onescan/config_purchase';
 		}
 	
+		//Callback entry point
 		public function handle() {
 			$settings = $this->getConfig()->getSettings();
 			if (isset($_GET['basket'])) {
@@ -30,6 +31,7 @@
 			}
 			
 			$onescanMessage = Onescan::ReadMessage($settings);
+			//Mage::log('Message: ' . print_r($onescanMessage,true));
 
 			$purchaseProcess = new OnescanPurchaseProcess();
 			$nextAction = $purchaseProcess->DecodePurchaseMessage($onescanMessage);
@@ -64,6 +66,7 @@
 					break;
 			}			 
 			$responseMessage = $purchaseProcess->EncodeOutcome();
+			//Mage::log('Response: ' . print_r($responseMessage,true));
 			 
 			Onescan::SendMessage($responseMessage,$settings);
 			return parent::handle();
@@ -72,23 +75,25 @@
 		/// <summary>
 		/// Build some extra information about further charges.
 		/// </summary>
-		public function BuildAdditionalCharges($process) {
+		private function BuildAdditionalCharges($process) {
 			$additionalChargesContext = $process->AdditionalChargesContext;
 			$requires=$process->PurchaseInfo->Requires;
 			$purchaseCharges = new AdditionalChargesPayload();
 	
 			if ($requires->DeliveryOptions && !empty($additionalChargesContext->DeliveryAddress)){
-				if(!$this->AddDeliveryCharges($additionalChargesContext->DeliveryAddress,$purchaseCharges,$process)){
+				$deliveryChargesResponse=$this->AddDeliveryCharges($additionalChargesContext->DeliveryAddress,$purchaseCharges,$process);
+				if($deliveryChargesResponse!==true){
 					$purchaseCharges->AddressNotSupported=1;
-					$purchaseCharges->AddressNotSupportedReason=Mage::getStoreConfig('onescantab/general/onescan_cannot-deliver-message');
+					$purchaseCharges->AddressNotSupportedReason=$deliveryChargesResponse;
 				}
 			}
 	
-			if ($requires->Surcharges && !empty($additionalChargesContext->PaymentMethod)){
+			//Surcharges not yet supported
+			/*if ($requires->Surcharges && !empty($additionalChargesContext->PaymentMethod)){
 				if(!$this->AddPaymentMethodCharges($additionalChargesContext->PaymentMethod,$purchaseCharges,$process)){
 					//REPORT SURCHARGES ERROR TO DEVICE;
 				}
-			}
+			}*/
 					
 			return $purchaseCharges;
 		}
@@ -96,7 +101,8 @@
 		/// <summary>
 		/// Add charges for the specified payment method.
 		/// </summary>
-		public function AddPaymentMethodCharges($paymentMethod,$purchaseCharges,$process) {
+		private function AddPaymentMethodCharges($paymentMethod,$purchaseCharges,$process) {
+			//Surcharges not yet supported, this sample function never gets called
 			switch ($paymentMethod->PaymentMethodType) {
 				case 'CreditCard':
 					$this->HandleCreditCardCharges($paymentMethod,$purchaseCharges,$process);
@@ -111,7 +117,8 @@
 		/// <summary>
 		/// Handle charges for the onescan test card.
 		/// </summary>
-		public function HandlePlayCardCharges($paymentMethod,$purchaseCharges,$process) {
+		private function HandlePlayCardCharges($paymentMethod,$purchaseCharges,$process) {
+			//Surcharges not yet supported, this sample function never gets called
 			$cardDetails = $paymentMethod->CardInformation;
 	
 			$purchaseCharges->PaymentMethodCharge = new PaymentMethodCharge();
@@ -126,7 +133,8 @@
 		/// <summary>
 		/// Handle charges for credit cards
 		/// </summary>
-		public function HandleCreditCardCharges($paymentMethod,$purchaseCharges,$process) {
+		private function HandleCreditCardCharges($paymentMethod,$purchaseCharges,$process) {
+			//Surcharges not yet supported, this sample function never gets called
 			$cardDetails = $paymentMethod->CardInformation;
 	
 			if ($cardDetails->PaymentSystemCode == "VISA") {
@@ -146,80 +154,37 @@
 		/// <summary>
 		/// Add delivery charges for the specified address.
 		/// </summary>
-		public function AddDeliveryCharges($address,$purchaseCharges,$process) {
-			$onescanModel=Mage::getModel('onescan/sessiondata');
-			$onescanData = $onescanModel->getCollection();
-			$onescanData->addFieldToFilter('sessionid', array('like' => $process->SessionState()->SessionID));
-			$onescanData->load();
-			$sessionData=$onescanData->getData();
-			$quoteid=$sessionData[0]['quoteid'];
+		private function AddDeliveryCharges($address,$purchaseCharges,$process) {
+			//Retreive quote from database
+			$quote=$this->MagentoRetrieveQuote($process->SessionState()->SessionID);
+
+			//Retrieve allowed shipping rates.
+			$shippingError=false;
+			$allowedRates=$this->MagentoGetShippingRates($quote,$shippingError,$address);
 			
-			$cart=Mage::getModel('checkout/cart')->getCheckoutSession();
-			$cart->setQuoteId($quoteid);
-			$quote=$cart->getQuote();
-			
-			/*if ($quote->getCouponCode() != '') {
-				$c = Mage::getResourceModel('salesrule/rule_collection');
-				$c->getSelect()->where("code=?", $quote->getCouponCode());
-				foreach ($c->getItems() as $item) {
-					$coupon = $item;
-				}
-				if ($coupon->getSimpleFreeShipping() > 0) {
-					$quote->getShippingAddress()->setShippingMethod($this->_shippingCode)->save();
-					return true;
-				}
-			}*/
-			try {
-				if ($quote->getShippingAddress()->getCountryId() == '') {
-					$quote->getShippingAddress()->setCountryId($address->CountryCode);
-				}
-				if ($quote->getShippingAddress()->getPostcode() == '') {
-					$quote->getShippingAddress()->setPostcode($address->Postcode);
-				}
-				$quote->getShippingAddress()->collectTotals();
-				$quote->getShippingAddress()->setCollectShippingRates(true);
-				$quote->getShippingAddress()->collectShippingRates();
-				$rates = $quote->getShippingAddress()->getShippingRatesCollection();
-			}
-			catch (Mage_Core_Exception $e) {
-				Mage::getSingleton('checkout/session')->addError($e->getMessage());
-			}
-			catch (Exception $e) {
-				Mage::getSingleton('checkout/session')->addException($e, Mage::helper('checkout')->__('Load customer quote error'));
+			//If retrieval of shipping rates was unsuccessful, return the error.
+			if($shippingError!==false){
+				return $shippingError;
 			}
 
-			$allowedRates=array();
-			$lowestPrice=99999;
-			foreach ($rates as $rate){
-				$rateCode=$rate->getCode();
-				if($quote->getShippingAddress()->collectShippingRates()->getShippingRateByCode($rateCode)){
-					$allowedRates[$rateCode]=$rate; //Using $rateCode as key removes duplicates
-				}
-
-				//Set the lowest rate as the default
-				if($rate->getPrice()<$lowestPrice){
-					$lowestPrice=$rate->getPrice();
-					$defaultCode=$rateCode;
-				}
-			}
-
-			$purchaseCharges->DeliveryOptions = array();
+			//Get shipping tax rate
 			$taxCalculation = Mage::getModel('tax/calculation');
 			$request = $taxCalculation->getRateRequest(null,null,null,$quote->getStore());
 			$taxRateId = Mage::getStoreConfig('tax/classes/shipping_tax_class',$quote->getStore());
 			$shippingTaxPercent = $taxCalculation->getRate($request->setProductClassId($taxRateId));
 
-			$defaultIndex=0;
-			foreach ($rates as $rate) {
+			//Build delivery options array to pass back to Onescan
+			$purchaseCharges->DeliveryOptions = array();
+			foreach ($allowedRates as $rate) {
 				$amount=$rate->getPrice();
 				if(is_numeric($amount)){
 					$option=new DeliveryOption(); 
 					$option->Code = $rate->getCode(); 
-					$option->Description = $rate->getMethodDescription();//CheckThis
-					if($option->Code==$defaultCode){
+					$option->Description = $rate->getMethodDescription();
+					//Setting default option is not yet supported in the Onescan extension
+					/*if($option->Code==$defaultCode){
 						$option->IsDefault = true;
-						$defaultIndex=count($purchaseCharges->DeliveryOptions);
-					}
+					}*/
 					$option->Label = $rate->getMethodTitle();
 					$option->Charge = new Charge();
 					$option->Charge->TotalAmount = $amount;
@@ -230,44 +195,44 @@
 			}
 
 			if(count($purchaseCharges->DeliveryOptions)==0){
-				//NO SHIPPING RATES AVAILABLE FOR THIS ORDER
-				return false;
+				//No shipping rates available for this order, return an error
+				return Mage::getStoreConfig('onescantab/general/onescan_cannot-deliver-message');
 			}
-
-			//Make sure the default rate is listed first
-			$option=$purchaseCharges->DeliveryOptions[$defaultIndex];
-			$purchaseCharges->DeliveryOptions[$defaultIndex]=$purchaseCharges->DeliveryOptions[0];
-			$purchaseCharges->DeliveryOptions[0]=$option;
-
-			$onescanModel->setId($sessionData[0]['sessiondata_id']);
-			$onescanModel->setSessionid($process->SessionState()->SessionID);
-			$onescanModel->setQuoteid($quoteid);
-			$onescanModel->setCustomerid($sessionData[0]['customerid']);
-			$onescanModel->setShippingmethod($option->Code);
-			$onescanModel->setShippingamount($option->Charge->TotalAmount * 100);//Floating point numbers are being stored as integers!
-			$onescanModel->setShippingtax($option->Charge->Tax * 100);//Floating point numbers are being stored as integers!
-			$onescanModel->save();
-
-			return true;
-		}
-		
-		public function BuildPurchasePayload($sessionID) {
+			
+			//Retreive Onescan data from database
+			$sessionID = $process->SessionState()->SessionID;
+			
 			$onescanData = Mage::getModel('onescan/sessiondata')->getCollection();
 			$onescanData->addFieldToFilter('sessionid', array('like' => $sessionID));
 			$onescanData->load();
 			$sessionData=$onescanData->getData();
-			$quoteid=$sessionData[0]['quoteid'];
-			
-			$cart=Mage::getModel('checkout/cart')->getCheckoutSession();
-			$cart->setQuoteId($quoteid);
-			
-			$quote=$cart->getQuote();
+
+			//Save details to Onescan database tables for later retrieval
+			$onescanModel=Mage::getModel('onescan/sessiondata');
+			$onescanModel->setId($sessionData[0]['sessiondata_id']);
+			$onescanModel->setSessionid($process->SessionState()->SessionID);
+			$onescanModel->setQuoteid($quote->getId());
+			$onescanModel->setCustomerid($sessionData[0]['customerid']);
+			$onescanModel->setShippingtax($shippingTaxPercent);
+			$onescanModel->save();
+
+			return true;
+		}
+
+		/// <summary>
+		/// Build purchase payload.
+		/// </summary>
+		private function BuildPurchasePayload($sessionID) {
+			//Retreive quote from database and reserve order id
+			$quote=$this->MagentoRetrieveQuote($sessionID);
 			$quote->reserveOrderId();
 			$quote->save();
 			
+			//Retreive prices from quote
 			$storeid=$quote->getStoreId();
 			$totals=$quote->getTotals();
 	
+			//Build Onescan payload from quote data
 			$payload = new PurchasePayload();
 			$payload->RequiresDeliveryAddress = true;
 			$payload->MerchantName = Mage::app()->getStore()->getFrontendName();
@@ -293,27 +258,23 @@
 			return $payload;
 		}
 		
-		public function BuildOrderAccepted($process) {
-			$sessionState=$process->SessionState();
-			$sessionID = $sessionState->SessionID;
+		/// <summary>
+		/// Build order accepted payload.
+		/// </summary>
+		private function BuildOrderAccepted($process) {
+			//Retreive Onescan data from database
+			$sessionID = $process->SessionState()->SessionID;
 			
 			$onescanData = Mage::getModel('onescan/sessiondata')->getCollection();
-			$onescanData->addFieldToFilter('sessionid', array('like' => $process->SessionState()->SessionID));
+			$onescanData->addFieldToFilter('sessionid', array('like' => $sessionID));
 			$onescanData->load();
 			$sessionData=$onescanData->getData();
 			
 			$quoteid=$sessionData[0]['quoteid'];
 			$customerid=$sessionData[0]['customerid'];
-			$shippingMethod=$sessionData[0]['shippingmethod'];
-			$shippingAmount=round($sessionData[0]['shippingamount'],2,PHP_ROUND_HALF_DOWN)/100;//Floating point numbers are being stored as integers!
-			$shippingTax=round($sessionData[0]['shippingtax'],2,PHP_ROUND_HALF_DOWN)/100;//Floating point numbers are being stored as integers!
+			$shippingTaxRate=$sessionData[0]['shippingtax'];
 			
-			$cart=Mage::getModel('checkout/cart')->getCheckoutSession();
-			$cart->setQuoteId($quoteid);
-			$totals=$cart->getQuote()->getTotals();
-			$quote=$cart->getQuote();
-			
-			//TEMPORARY FIX FOR BLANK FIRST AND LAST NAMES
+			//If FirstName or LastName are blank, Magento can't proceed with order
 			if ($process->PaymentConfirmation->FirstName=="") {
 				$process->PaymentConfirmation->FirstName="First";
 			}
@@ -321,11 +282,61 @@
 				$process->PaymentConfirmation->LastName="Last";
 			}
 
+			//Make sure we have an account and are logged in to Magento
+			$this->MagentoLogin($customerid,$quoteid);
+
+			//Place the order
+			$orderId=$this->MagentoPlaceOrder($process,$shippingTaxRate,$quoteid);
+
+			//Pass data back to Onescan
+			$orderAccepted = new OrderAcceptedPayload();
+			$orderAccepted->ReceiptId = $process->ProcessId();
+			$orderAccepted->OrderId = $orderId;
+
+			return $orderAccepted;
+		}
+
+		//Create random password for "manual" login
+		private function randomPassword() {
+			$alphabet = "abcdefghijkmnopqrstuwxyzABCDEFGHJKLMNPQRSTUWXYZ23456789";
+			$pass='';
+			
+			for ($i = 0; $i < 8; $i++) {
+				$n = rand(0, strlen($alphabet)-1);
+				$pass .= $alphabet[$n];
+			}
+			
+			return $pass;
+		}
+		
+		private function MagentoRetrieveQuote($sessionID){
+			//Retrieve quote from database
+			$onescanData = Mage::getModel('onescan/sessiondata')->getCollection();
+			$onescanData->addFieldToFilter('sessionid', array('like' => $sessionID));
+			$onescanData->load();
+			$sessionData=$onescanData->getData();
+			$quoteid=$sessionData[0]['quoteid'];
+				
+			//Retreive quote
+			$cart=Mage::getModel('checkout/cart')->getCheckoutSession();
+			$cart->setQuoteId($quoteid);
+		
+			return $cart->getQuote();
+		}
+		
+		protected function MagentoLogin($customerid,$quoteid){
+			//Retreive quote from database
+			$cart=Mage::getModel('checkout/cart')->getCheckoutSession();
+			$cart->setQuoteId($quoteid);
+			$totals=$cart->getQuote()->getTotals();
+			$quote=$cart->getQuote();
+
 			if ($customerid) {
 				// We are already logged in:
 				$customer = Mage::getModel('customer/customer')->setWebsiteId(Mage::app()->getWebsite()->getId())->load($customerid);
 				$quote->assignCustomer($customer);
 			} else {
+				//Determine whether Onescan user token is recognised
 				$loginTokens = Mage::getModel('onescan/logintokens')->getCollection();
 				$loginTokens->addFieldToFilter('onescantoken', array('like' => $process->UserToken));
 				$loginTokens->load();
@@ -344,6 +355,7 @@
 						$customer->setPassword($this->randomPassword());
 						try {
 							$customer->save();
+							//Determine whether email confirmation is required then set up account and send appropriate email
 							if (Mage::getStoreConfig('onescantab/general/onescan_skip-confirmation') || !$customer->isConfirmationRequired()) {
 								$customer->setConfirmation(null);
 								$customer->save();
@@ -362,6 +374,7 @@
 								$confirmMessage=true;
 							}
 							
+							//Store the Onescan user token in the database and associate it with the Magento account
 							$newToken=Mage::getModel('onescan/logintokens');
 							$newToken->setOnescantoken($process->UserToken);
 							$newToken->setMagentouserid($customer->getId());
@@ -380,7 +393,8 @@
 						 catch (Mage_Core_Exception $e) {
 							LocalDataFactory::storeObject($sessionID . '-message',$e->getMessage());
 						}
-					} else { //Email address recognised so redirect to login page
+					} else {
+						//Email address recognised so redirect to login page
 						LocalDataFactory::storeObject($sessionID . '-message',Mage::getStoreConfig('onescantab/general/onescan_email-exists-message'));	
 					}
 				} else {
@@ -391,43 +405,36 @@
 				}
 				$quote->assignCustomer($customer);
 			}
+		}
+		
+		protected function MagentoPlaceOrder($process,$shippingTaxRate,$quoteid){
+			//Retreive quote from database
+			$cart=Mage::getModel('checkout/cart')->getCheckoutSession();
+			$cart->setQuoteId($quoteid);
+			$totals=$cart->getQuote()->getTotals();
+			$quote=$cart->getQuote();
+			
+			//Calculate shipping values.
+			$shippingMethod=$process->PaymentConfirmation->DeliveryMethodCode;
+			$totalShippingAmount=$process->PaymentConfirmation->AmountCharged->PostageAmount;
+			$shippingTax=$totalShippingAmount-($totalShippingAmount*100)/(100+$shippingTaxRate);
+			$shippingAmount=$totalShippingAmount-$shippingTax;
+			
+			//Add customer name to the quote, along with billing address and shipping address.
+			$quote->setcustomerfirstname($process->PaymentConfirmation->FirstName);
+			$quote->setcustomerlastname($process->PaymentConfirmation->LastName);
 
-			$addressData = array(
-				'firstname' => $process->PaymentConfirmation->FirstName,
-				'lastname' => $process->PaymentConfirmation->LastName,
-				'street' => $process->PaymentConfirmation->DeliveryAddress->AddressLine1 . ', ' . $process->PaymentConfirmation->DeliveryAddress->AddressLine2,
-				'city' => $process->PaymentConfirmation->DeliveryAddress->Town,
-				'postcode' => $process->PaymentConfirmation->DeliveryAddress->Postcode,
-				'telephone' => '0',
-				'country_id' => $process->PaymentConfirmation->DeliveryAddress->CountryCode,
-			);
+			$addressData=$quote->getBillingAddress()->getData();
+			$addressData['firstname']=$process->PaymentConfirmation->FirstName;
+			$addressData['lastname']=$process->PaymentConfirmation->LastName;
+			$billingAddress = $quote->getBillingAddress()->setData($addressData);
 
-			$regions=Mage::getModel('directory/region')
-				->getResourceCollection()
-				->addCountryFilter($process->PaymentConfirmation->DeliveryAddress->CountryCode)
-				->load();
+			$addressData=$quote->getShippingAddress()->getData();
+			$addressData['firstname']=$process->PaymentConfirmation->FirstName;
+			$addressData['lastname']=$process->PaymentConfirmation->LastName;
+			$shippingAddress = $quote->getShippingAddress()->setData($addressData);
 
-			$regionMatch=false;
-			foreach($regions as $region){
-				$regionName=$region->default_name;
-				$regionId=$region->region_id;
-				if(stripos($region->default_name,$process->PaymentConfirmation->DeliveryAddress->County)!==false ||
-				strcasecmp($process->PaymentConfirmation->DeliveryAddress->County,$region->code)==0 ||
-				//Use first region if county is empty
-				$process->PaymentConfirmation->DeliveryAddress->County==''){
-					$addressData['region']=$region->default_name;
-					$addressData['region_id']=$region->region_id;
-					$regionMatch=true;
-					break;
-				}
-			}
-			if(!$regionMatch){
-				$addressData['region']=$regionName;
-				$addressData['region_id']=$regionId;
-			}
-
-			$billingAddress = $quote->getBillingAddress()->addData($addressData);
-			$shippingAddress = $quote->getShippingAddress()->addData($addressData);
+			//Set shipping and payment methods for order
 			$shippingAddress->setCollectShippingRates(true)->collectShippingRates()
 				->setShippingMethod($shippingMethod)
 				->setPaymentMethod('onescan');
@@ -449,6 +456,7 @@
 			$quote->setIsActive(0);
 			$quote->save();
 
+			//Create order from quote
 			$service = Mage::getModel('sales/service_quote', $quote);
 			$service->submitAll();
 
@@ -472,24 +480,99 @@
 
 			$quote->setIsActive(false);
 			$quote->delete();
-
-			$orderAccepted = new OrderAcceptedPayload();
-			$orderAccepted->ReceiptId = $process->ProcessId();
-			$orderAccepted->OrderId = $order->getIncrementId();
-
-			return $orderAccepted;
-		}
-
-		public function randomPassword() {
-			$alphabet = "abcdefghijkmnopqrstuwxyzABCDEFGHJKLMNPQRSTUWXYZ23456789";
-			$pass='';
 			
-			for ($i = 0; $i < 8; $i++) {
-				$n = rand(0, strlen($alphabet)-1);
-				$pass .= $alphabet[$n];
+			return $order->getIncrementId();
+		}
+		
+		protected function MagentoGetShippingRates($quote,$shippingError,$address){			
+			//Coupons not yet supported, sample code for reference
+			/*if ($quote->getCouponCode() != '') {
+				$c = Mage::getResourceModel('salesrule/rule_collection');
+				$c->getSelect()->where("code=?", $quote->getCouponCode());
+				foreach ($c->getItems() as $item) {
+					$coupon = $item;
+				}
+				if ($coupon->getSimpleFreeShipping() > 0) {
+					$quote->getShippingAddress()->setShippingMethod($this->_shippingCode)->save();
+					return true;
+				}
+			}*/
+			
+			//Add address to quote
+			try {
+				$addressData = array(
+					'street' => $address->AddressLine1 . ', ' . $address->AddressLine2,
+					'city' => $address->Town,
+					'postcode' => $address->Postcode,
+					'telephone' => '0',
+					'country_id' => $address->CountryCode,
+				);
+
+				//Check to see if region/state is required for the delivery country
+				$requiredStates=explode(',',Mage::getStoreConfig('general/region/state_required', Mage::app()->getStore()));
+				if(in_array($address->CountryCode,$requiredStates)){
+					$regions=Mage::getModel('directory/region')
+						->getResourceCollection()
+						->addCountryFilter($address->CountryCode)
+						->load();
+	
+					//Ensure we have a valid region/state as either the full name or two letter abbreviation
+					$regionMatch=false;
+					//Check if supplied county text appears within full region name
+					foreach($regions as $region){
+						if(stripos($region->default_name,$address->County)!==false
+								//Use first region if county is empty to allow testing with early version of Onscan app
+								|| $address->County==''){
+							$addressData['region']=$region->default_name;
+							$addressData['region_id']=$region->region_id;
+							$regionMatch=true;
+							break;
+						}
+					}
+					//If supplied county is two characters long, check if we match the two letter region abbreviation
+					if(strlen($address->County)==2){
+						foreach($regions as $region){
+							if(strcasecmp($address->County,$region->code)==0){
+								$addressData['region']=$region->default_name;
+								$addressData['region_id']=$region->region_id;
+								$regionMatch=true;
+								break;
+							}
+						}
+					}
+					if(!$regionMatch){
+						//Region not found, return an error
+						return Mage::getStoreConfig('onescantab/general/onescan_unknown-region-message');
+					}
+				}
+
+				$billingAddress = $quote->getBillingAddress()->addData($addressData);
+				$shippingAddress = $quote->getShippingAddress()->addData($addressData);
+
+				//Get valid shipping rates for this address
+				$quote->getShippingAddress()->collectTotals();
+				$quote->getShippingAddress()->setCollectShippingRates(true);
+				$quote->getShippingAddress()->collectShippingRates();
+				$rates = $quote->getShippingAddress()->getShippingRatesCollection();
+			}
+			catch (Mage_Core_Exception $e) {
+				Mage::getSingleton('checkout/session')->addError($e->getMessage());
+			}
+			catch (Exception $e) {
+				Mage::getSingleton('checkout/session')->addException($e, Mage::helper('checkout')->__('Load customer quote error'));
 			}
 			
-			return $pass;
+			$quote->save();
+
+			$allowedRates=array();
+			foreach ($rates as $rate){
+				$rateCode=$rate->getCode();
+				if($quote->getShippingAddress()->collectShippingRates()->getShippingRateByCode($rateCode)){
+					$allowedRates[$rateCode]=$rate; //Using $rateCode as key removes duplicates
+				}
+			}
+
+			return $allowedRates;
 		}
 	}
 ?>

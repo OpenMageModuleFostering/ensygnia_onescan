@@ -117,6 +117,15 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </onescan_email-exists-message>
+                        <onescan_unknown-region-message translate="label comment">
+                            <label>Unknown Region Message</label>
+                            <comment>Error message that is shown on the Onescanner's device if the county/state/region is unknown</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>75</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </onescan_unknown-region-message>
                         <onescan_cannot-deliver-message translate="label comment">
                             <label>Cannot Deliver Message</label>
                             <comment>Error message that is shown on the Onescanner's device if the order cannot be delivered to the address that they supplied</comment>
