@@ -123,7 +123,7 @@
 	
 			$purchaseCharges->PaymentMethodCharge = new PaymentMethodCharge();
 			$purchaseCharges->PaymentMethodCharge->Code = "PLAY";
-			$purchaseCharges->PaymentMethodCharge->Description = "The onescan play card attracts a Ã‚Â£1 surcharge";
+			$purchaseCharges->PaymentMethodCharge->Description = "The onescan play card attracts a �1 surcharge";
 			$purchaseCharges->PaymentMethodCharge->Charge = new Charge();
 			$purchaseCharges->PaymentMethodCharge->Charge->BaseAmount = 1.00;
 			$purchaseCharges->PaymentMethodCharge->Charge->Tax = 0;
@@ -188,8 +188,16 @@
 					$option->Label = $rate->getMethodTitle();
 					$option->Charge = new Charge();
 					$option->Charge->TotalAmount = $amount;
-					$option->Charge->Tax = $amount-($amount*100)/(100+$shippingTaxPercent);
-					$option->Charge->BaseAmount = $amount-$option->Charge->Tax;
+					//Round shipping tax down
+					$option->Charge->Tax = floor(($amount-$amount/(1+$shippingTaxPercent/100))*100)/100;
+					if(Mage::getStoreConfig('tax/display/type',Mage::app()->getStore())==1){
+						//Show price excluding tax
+						$option->Charge->BaseAmount = $amount-$option->Charge->Tax;
+					}else{
+						//Show price including tax
+						$option->Charge->BaseAmount = $amount;
+					}
+					$option->Charge->BaseAmount = $amount;
 					$purchaseCharges->DeliveryOptions[]=$option;
 				}
 			}
@@ -213,7 +221,6 @@
 			$onescanModel->setSessionid($process->SessionState()->SessionID);
 			$onescanModel->setQuoteid($quote->getId());
 			$onescanModel->setCustomerid($sessionData[0]['customerid']);
-			$onescanModel->setShippingtax($shippingTaxPercent);
 			$onescanModel->save();
 
 			return true;
@@ -244,7 +251,14 @@
 			} else {
  				$payload->Tax = 0;
 			}
-			$payload->ProductAmount = $totals['subtotal']->getValue()-$payload->Tax;
+
+			if(Mage::getStoreConfig('tax/display/type',Mage::app()->getStore())==1){
+				//Show price excluding tax
+				$payload->ProductAmount = $totals['subtotal']->getValue()-$payload->Tax;
+			}else{
+				//Show price including tax
+				$payload->ProductAmount = $totals['subtotal']->getValue();
+			}
 			$payload->PaymentAmount = $totals['subtotal']->getValue();
 			$payload->Currency = Mage::app()->getStore($storeid)->getCurrentCurrencyCode();
 	
@@ -272,7 +286,6 @@
 			
 			$quoteid=$sessionData[0]['quoteid'];
 			$customerid=$sessionData[0]['customerid'];
-			$shippingTaxRate=$sessionData[0]['shippingtax'];
 			
 			//If FirstName or LastName are blank, Magento can't proceed with order
 			if ($process->PaymentConfirmation->FirstName=="") {
@@ -283,10 +296,10 @@
 			}
 
 			//Make sure we have an account and are logged in to Magento
-			$this->MagentoLogin($customerid,$quoteid);
+			$this->MagentoLogin($customerid,$quoteid,$process);
 
 			//Place the order
-			$orderId=$this->MagentoPlaceOrder($process,$shippingTaxRate,$quoteid);
+			$orderId=$this->MagentoPlaceOrder($process,$quoteid);
 
 			//Pass data back to Onescan
 			$orderAccepted = new OrderAcceptedPayload();
@@ -324,12 +337,12 @@
 			return $cart->getQuote();
 		}
 		
-		protected function MagentoLogin($customerid,$quoteid){
+		protected function MagentoLogin($customerid,$quoteid,$process){
 			//Retreive quote from database
 			$cart=Mage::getModel('checkout/cart')->getCheckoutSession();
 			$cart->setQuoteId($quoteid);
-			$totals=$cart->getQuote()->getTotals();
 			$quote=$cart->getQuote();
+			$sessionID=$process->SessionState()->SessionID;
 
 			if ($customerid) {
 				// We are already logged in:
@@ -407,18 +420,11 @@
 			}
 		}
 		
-		protected function MagentoPlaceOrder($process,$shippingTaxRate,$quoteid){
+		protected function MagentoPlaceOrder($process,$quoteid){
 			//Retreive quote from database
 			$cart=Mage::getModel('checkout/cart')->getCheckoutSession();
 			$cart->setQuoteId($quoteid);
-			$totals=$cart->getQuote()->getTotals();
 			$quote=$cart->getQuote();
-			
-			//Calculate shipping values.
-			$shippingMethod=$process->PaymentConfirmation->DeliveryMethodCode;
-			$totalShippingAmount=$process->PaymentConfirmation->AmountCharged->PostageAmount;
-			$shippingTax=$totalShippingAmount-($totalShippingAmount*100)/(100+$shippingTaxRate);
-			$shippingAmount=$totalShippingAmount-$shippingTax;
 			
 			//Add customer name to the quote, along with billing address and shipping address.
 			$quote->setcustomerfirstname($process->PaymentConfirmation->FirstName);
@@ -436,48 +442,26 @@
 
 			//Set shipping and payment methods for order
 			$shippingAddress->setCollectShippingRates(true)->collectShippingRates()
-				->setShippingMethod($shippingMethod)
+				->setShippingMethod($process->PaymentConfirmation->DeliveryMethodCode)
 				->setPaymentMethod('onescan');
-			
-			$quote->getShippingAddress()->collectTotals();
 
 			$quote->getPayment()->importData(array('method' => 'onescan'));
-
-			foreach($quote->getAllItems() as $item){
-				$totalPrice=round($item->getProduct()->getFinalPrice(),2,PHP_ROUND_HALF_DOWN)*$item->getQty();
-				$taxAmount=round($totalPrice-$item->getPrice(),2,PHP_ROUND_HALF_DOWN);
-				$item->setTaxAmount($taxAmount);
-				$item->setTaxPercent(round($taxAmount*100/($totalPrice-$taxAmount),2));
-			}
-
-			//Add postage to quote
-			$totals['grand_total']->setValue(round($totals['grand_total']->getValue(),2,PHP_ROUND_HALF_DOWN));
-			
-			$quote->setIsActive(0);
-			$quote->save();
 
 			//Create order from quote
 			$service = Mage::getModel('sales/service_quote', $quote);
 			$service->submitAll();
-
 			$order = $service->getOrder();
-			$order->setShippingMethod($shippingMethod);
 
-			$amountCharged=$process->PaymentConfirmation->AmountCharged;
-			$order	->setSubtotal($amountCharged->BasketAmount)
-				->setSubtotalIncludingTax($amountCharged->BasePaymentAmount)
-				->setBaseSubtotal($amountCharged->BasketAmount)
-				->setGrandTotal($amountCharged->PaymentAmount)
-				->setBaseGrandTotal($amountCharged->PaymentAmount)
-				->setBaseTaxAmount(round($amountCharged->BasketTax+$shippingTax,2,PHP_ROUND_HALF_DOWN))
-				->setTaxAmount(round($amountCharged->BasketTax+$shippingTax,2,PHP_ROUND_HALF_DOWN));
-
-			$order->getPayment()->capture(null);
-			
-			$order->place();
+			//Add payment to order
+			$payment = $order->getPayment();
+			$payment->setTransactionId($process->PaymentConfirmation->GatewayTransactionId)
+				->setCurrencyCode($order->getBaseCurrencyCode())
+				->setPreparedMessage('Comment')
+				->setIsTransactionClosed(0)
+				->registerCaptureNotification($process->PaymentConfirmation->AmountCharged->PaymentAmount);
 			$order->save();
-			$order->sendNewOrderEmail();
 
+			//Delete quote
 			$quote->setIsActive(false);
 			$quote->delete();
 			

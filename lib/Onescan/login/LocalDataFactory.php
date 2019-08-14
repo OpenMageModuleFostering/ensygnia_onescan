@@ -19,11 +19,17 @@
 	class LocalDataFactory {
 	
 		public static function removeStoredObject($signature) {
-		  return (unlink(sys_get_temp_dir() . '/' . $signature));
+			if(file_exists(sys_get_temp_dir() . '/' . $signature)){
+				return (unlink(sys_get_temp_dir() . '/' . $signature));
+			}else{
+				return false;
+			}
 		}
 	
 		public static function getStoredObject($signature) {
-			if ($data = file_get_contents(sys_get_temp_dir() . '/' . $signature)) {
+			if(!file_exists(sys_get_temp_dir() . '/' . $signature)){
+				return false;
+			}elseif($data = file_get_contents(sys_get_temp_dir() . '/' . $signature)) {
 				$obj = @unserialize($data);
 				return $obj;
 			}
