@@ -147,17 +147,10 @@
 			$sessionData=$onescanData->getData();
 			$quoteid=$sessionData[0]['quoteid'];
 			
-			/*if (Mage::registry('checkout_addShipping')) {
-				Mage::unregister('checkout_addShipping');
-				return;
-			}
-			Mage::register('checkout_addShipping',true);*/
-			
 			$cart=Mage::getModel('checkout/cart')->getCheckoutSession();
 			$cart->setQuoteId($quoteid);
 			$quote=$cart->getQuote();
 			
-			$countryCode=Mage::app()->getLocale()->getCountryTranslation(Mage::getStoreConfig('general/country/default'));
 			/*if ($quote->getCouponCode() != '') {
 				$c = Mage::getResourceModel('salesrule/rule_collection');
 				$c->getSelect()->where("code=?", $quote->getCouponCode());
@@ -171,10 +164,12 @@
 			}*/
 			try {
 				if ($quote->getShippingAddress()->getCountryId() == '') {
-					$quote->getShippingAddress()->setCountryId($countryCode);
+					$quote->getShippingAddress()->setCountryId($address->CountryCode);
 				}
-				$quote->collectTotals();
-
+				if ($quote->getShippingAddress()->getPostcode() == '') {
+					$quote->getShippingAddress()->setPostcode($address->Postcode);
+				}
+				$quote->getShippingAddress()->collectTotals();
 				$quote->getShippingAddress()->setCollectShippingRates(true);
 				$quote->getShippingAddress()->collectShippingRates();
 				$rates = $quote->getShippingAddress()->getShippingRatesCollection();
@@ -383,7 +378,6 @@
 				$quote->assignCustomer($customer);
 			}
 
-			$country=Mage::app()->getLocale()->getCountryTranslation(Mage::getStoreConfig('general/country/default'));
 			$addressData = array(
 				'firstname' => $process->PaymentConfirmation->FirstName,
 				'lastname' => $process->PaymentConfirmation->LastName,
@@ -391,10 +385,11 @@
 				'city' => $process->PaymentConfirmation->DeliveryAddress->Town,
 				'postcode' => $process->PaymentConfirmation->DeliveryAddress->Postcode,
 				'telephone' => '0',
-				'country_id' => $country,
+				'country_id' => $process->PaymentConfirmation->DeliveryAddress->CountryCode,
+//*** NEED TO SET CORRECT REGION ID ***//
 				'region_id' => 0,
 			);
-			$quote->getShippingAddress()->collectTotals();
+			//$quote->getShippingAddress()->collectTotals();
 
 			$billingAddress = $quote->getBillingAddress()->addData($addressData);
 			$shippingAddress = $quote->getShippingAddress()->addData($addressData);
@@ -402,8 +397,9 @@
 				->setShippingMethod($shippingMethod)
 				->setPaymentMethod('onescan');
 			
-			$quote->collectTotals();
-			
+			$quote->getShippingAddress()->collectTotals();
+			//$quote->collectTotals();
+
 			$quote->getPayment()->importData(array('method' => 'onescan'));
 
 			foreach($quote->getAllItems() as $item){
@@ -412,7 +408,7 @@
 				$item->setTaxAmount($taxAmount);
 				$item->setTaxPercent(round($taxAmount*100/($totalPrice-$taxAmount),2));
 			}
-			
+
 			//Add postage to quote
 			$totals['grand_total']->setValue(round($totals['grand_total']->getValue(),2,PHP_ROUND_HALF_DOWN));
 			
@@ -421,8 +417,8 @@
 
 			$service = Mage::getModel('sales/service_quote', $quote);
 			$service->submitAll();
-			$order = $service->getOrder();
 
+			$order = $service->getOrder();
 			$order->setShippingMethod($shippingMethod);
 
 			$amountCharged=$process->PaymentConfirmation->AmountCharged;
@@ -434,25 +430,19 @@
 				->setBaseTaxAmount(round($amountCharged->BasketTax+$shippingTax,2,PHP_ROUND_HALF_DOWN))
 				->setTaxAmount(round($amountCharged->BasketTax+$shippingTax,2,PHP_ROUND_HALF_DOWN));
 
-
-			/*$order->setTaxAmount($process->PaymentConfirmation->AmountCharged->BasketTax+$shippingTax);
-			$order->setBaseTaxAmount($process->PaymentConfirmation->AmountCharged->BasketTax+$shippingTax);
-			$order->setSubtotalIncludingTax($process->PaymentConfirmation->Amou)
-			$order->setGrandTotal($process->PaymentConfirmation->AmountCharged->PaymentAmount);
-			$order->setBaseGrandTotal($process->PaymentConfirmation->AmountCharged->PaymentAmount);*/
-
-			$order->getPayment()->capture();
+			$order->getPayment()->capture(null);
 			
 			$order->place();
 			$order->save();
 			$order->sendNewOrderEmail();
-			
+
 			$quote->setIsActive(false);
 			$quote->delete();
-			
+
 			$orderAccepted = new OrderAcceptedPayload();
 			$orderAccepted->ReceiptId = $process->ProcessId();
 			$orderAccepted->OrderId = $order->getIncrementId();
+
 			return $orderAccepted;
 		}
 
