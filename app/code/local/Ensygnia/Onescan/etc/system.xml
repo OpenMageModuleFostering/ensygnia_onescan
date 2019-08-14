@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
 	Ensygnia Onescan extension
 	Copyright (C) 2014 Ensygnia Ltd
@@ -80,15 +79,6 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </onescan_serverurl>
-                        <onescan_basket-logo-url translate="label comment">
-                            <label>Basket Logo URL</label>
-                            <comment>Basket logo URL - logo to appear on the Onescanner's device, 128px wide works best</comment>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>45</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </onescan_basket-logo-url>
                         <onescan_register-success-message translate="label comment">
                             <label>Register Success Message</label>
                             <comment>Message to show after a successful registration</comment>
@@ -117,29 +107,11 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </onescan_email-exists-message>
-                        <onescan_unknown-region-message translate="label comment">
-                            <label>Unknown Region Message</label>
-                            <comment>Error message that is shown on the Onescanner's device if the county/state/region is unknown</comment>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>75</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </onescan_unknown-region-message>
-                        <onescan_cannot-deliver-message translate="label comment">
-                            <label>Cannot Deliver Message</label>
-                            <comment>Error message that is shown on the Onescanner's device if the order cannot be delivered to the address that they supplied</comment>
-                            <frontend_type>text</frontend_type>
-                            <sort_order>80</sort_order>
-                            <show_in_default>1</show_in_default>
-                            <show_in_website>1</show_in_website>
-                            <show_in_store>1</show_in_store>
-                        </onescan_cannot-deliver-message>
                         <onescan_login-success-message translate="label comment">
                             <label>Login Success Message</label>
                             <comment>Message to show after a successful login</comment>
                             <frontend_type>text</frontend_type>
-                            <sort_order>90</sort_order>
+                            <sort_order>80</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
@@ -148,7 +120,7 @@
                             <label>Email Not Confirmed Message</label>
                             <comment>Message to show after a login attempt when email address has not been confirmed (use %s for resend email URL).</comment>
                             <frontend_type>text</frontend_type>
-                            <sort_order>100</sort_order>
+                            <sort_order>90</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
@@ -157,7 +129,7 @@
                             <label>Customer Deleted Message</label>
                             <comment>Message to show after a login attempt when customer no longer exists.</comment>
                             <frontend_type>text</frontend_type>
-                            <sort_order>110</sort_order>
+                            <sort_order>90</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
@@ -166,7 +138,7 @@
                             <label>Shopping Basket Name</label>
                             <comment>The name of the shopping basket that appears on the Onescanner's device.</comment>
                             <frontend_type>text</frontend_type>
-                            <sort_order>120</sort_order>
+                            <sort_order>100</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
@@ -176,7 +148,7 @@
                             <comment>Display the Onescan padlock on the cart page.</comment>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_yesno</source_model>
-                            <sort_order>130</sort_order>
+                            <sort_order>110</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
@@ -186,7 +158,7 @@
                             <comment>Display the Onescan padlock in the mini cart.</comment>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_yesno</source_model>
-                            <sort_order>140</sort_order>
+                            <sort_order>120</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
@@ -196,7 +168,7 @@
                             <comment>Display the "Now accepting Onescan" block.</comment>
                             <frontend_type>select</frontend_type>
                             <source_model>adminhtml/system_config_source_yesno</source_model>
-                            <sort_order>150</sort_order>
+                            <sort_order>130</sort_order>
                             <show_in_default>1</show_in_default>
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>

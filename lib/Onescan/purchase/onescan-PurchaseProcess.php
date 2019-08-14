@@ -203,19 +203,15 @@
             $this->responseMessage->MessageType = "OrderAccepted";
             $this->responseMessage->ProcessId = $this->requestMessage->ProcessId;
 			
-			if($outcome!=null){
-            	$messagePayload = $this->responseMessage->AddNewPayloadItem();
-            	$messagePayload->JsonPayload = json_encode($outcome);
-            	$messagePayload->PayloadName = ProcessOutcome::Name;
-			}
+            $messagePayload = $this->responseMessage->AddNewPayloadItem();
+            $messagePayload->JsonPayload = json_encode($outcome);
+            $messagePayload->PayloadName = ProcessOutcome::Name;
 			
-			if($orderAccepted!=null){
-            	$confirmPayload = $this->responseMessage->AddNewPayloadItem();
-            	$confirmPayload->JsonPayload = json_encode($orderAccepted);
-            	$confirmPayload->PayloadName = OrderAcceptedPayload::Name;
-			}
+            $confirmPayload = $this->responseMessage->AddNewPayloadItem();
+            $confirmPayload->JsonPayload = json_encode($orderAccepted);
+            $confirmPayload->PayloadName = OrderAcceptedPayload::Name;
 
-            //$this->InternalAddOutcome($outcome);
+            $this->InternalAddOutcome($outcome);
 
             return $this->responseMessage;
         }

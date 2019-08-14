@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
 	Ensygnia Onescan extension
 	Copyright (C) 2014 Ensygnia Ltd
@@ -19,7 +18,7 @@
 <config>    
     <modules>
         <Ensygnia_Onescan>
-            <version>1.0.13</version>
+            <version>1.0.2</version>
         </Ensygnia_Onescan>
     </modules>
     <global>
@@ -66,12 +65,9 @@
                 <onescan_account></onescan_account>
 				<onescan_secret></onescan_secret>
 				<onescan_serverurl>https://liveservice.ensygnia.net/api/PartnerGateway/1/</onescan_serverurl>
-				<onescan_basket-logo-url>http://www.ensygnia.com/wp-content/themes/onescan_v3/logo-ensygnia.png</onescan_basket-logo-url>
 				<onescan_register-success-message>You have successfully registered using Onescan. We have sent you an email with your login details should you ever need to log in "manually".</onescan_register-success-message>
 				<onescan_skip-confirmation>1</onescan_skip-confirmation>
 				<onescan_email-exists-message>Email address already registered, please log in using Onescan.</onescan_email-exists-message>
-				<onescan_unknown-region-message>The county/state/region you supplied is not known, please edit your address.</onescan_unknown-region-message>
-				<onescan_cannot-deliver-message>We cannot deliver your order to the address you supplied.</onescan_cannot-deliver-message>
 				<onescan_login-success-message>You have successfully logged in using Onescan.</onescan_login-success-message>
 				<onescan_email-not-confirmed-message>This account is not confirmed. &lt;a href="%s"&gt;Click here&lt;/a&gt; to resend confirmation email.</onescan_email-not-confirmed-message>
 				<onescan_customer-deleted-message>We cannot find your account on our system. Please use Onescan to create a new account.</onescan_customer-deleted-message>

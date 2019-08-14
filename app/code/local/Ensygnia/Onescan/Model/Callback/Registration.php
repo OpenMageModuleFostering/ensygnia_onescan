@@ -118,7 +118,7 @@
 			return parent::handle();
 		}
 
-		private function randomPassword() {
+		public function randomPassword() {
 			$alphabet = "abcdefghijkmnopqrstuwxyzABCDEFGHJKLMNPQRSTUWXYZ23456789";
 			$pass='';
 			

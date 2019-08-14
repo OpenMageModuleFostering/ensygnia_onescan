@@ -127,18 +127,15 @@
 		}
 
 		public function getSessionFromBasketUrl() {
-			return str_ireplace(array('http://','https://'),'//',
-				Mage::getUrl('onescan/index/createsessionfrombasket'));
+			return Mage::getUrl('onescan/index/createsessionfrombasket');
 		}
 
 		public function getLoginSessionUrl() {
-			return str_ireplace(array('http://','https://'),'//',
-				Mage::getUrl('onescan/index/createloginsession'));
+			return Mage::getUrl('onescan/index/createloginsession');
 		}
 
 		public function getRegistrationSessionUrl() {
-			return str_ireplace(array('http://','https://'),'//',
-				Mage::getUrl('onescan/index/createregistrationsession'));
+			return Mage::getUrl('onescan/index/createregistrationsession');
 		}
 	}
 ?>

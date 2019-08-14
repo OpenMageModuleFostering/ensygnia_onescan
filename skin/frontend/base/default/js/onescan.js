@@ -15,20 +15,16 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
 function postConfirm(basket) {
 	// Redirect to purchase success page
-	if(typeof(magentobase)=='undefined'){
-		window.setTimeout(postConfirm(basket),250);
-	}else{
-		if (basket==0){
-			window.location.assign(magentobase + 'onescan/index/purchasesuccess');
-		} else {
-			window.location.assign(magentobase + 'onescan/index/purchasesuccess/?basket=' + basket);
-		}
+	currentUrl=window.location.toString();
+	var magentobase=currentUrl.substring(0,currentUrl.indexOf("index.php"));
+	if (basket==0){
+			window.location.assign(magentobase + 'index.php/onescan/index/purchasesuccess');
+	} else {
+		window.location.assign(magentobase + 'index.php/onescan/index/purchasesuccess/?basket=' + basket);
 	}
 }		 
- 
 
 function postFailed() {
 	// Redirect to failure page
