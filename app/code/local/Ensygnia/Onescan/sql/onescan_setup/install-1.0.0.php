@@ -38,7 +38,8 @@
 		->addColumn('shippingmethod', Varien_Db_Ddl_Table::TYPE_TEXT, null, array(
 			'nullable' => true,
 			), 'Shipping Method')
-		->addColumn('shippingrate', Varien_Db_Ddl_Table::TYPE_INTEGER, null, array(
+		->addColumn($installer->getTable('onescan/sessiondata'),
+			'shippingrate', Varien_Db_Ddl_Table::TYPE_INTEGER, null, array(
 			'unsigned' => true,
 			'nullable' => false,
 			), 'Shipping Rate')

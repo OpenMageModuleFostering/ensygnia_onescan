@@ -34,9 +34,9 @@ function postFailed() {
 
 //*** Add the onescan script to the head section here as <action method="setText" does not work on some installations ***//
 
-var scriptElement=document.createElement('script');
+/*var scriptElement=document.createElement('script');
 scriptElement.type='text/javascript';
-scriptElement.src='//ensygniaresources.ensygnia.net/onescan/latest/scripts/onescan.js';
+scriptElement.src='//onescanresources.ensygnia.net/onescan/latest/scripts/onescan.js';
 
 var headElement=document.getElementsByTagName('head')[0];
-headElement.appendChild(scriptElement);
+headElement.appendChild(scriptElement);*/
