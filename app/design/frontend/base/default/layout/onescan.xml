@@ -1,0 +1,97 @@
+<!--
+	Ensygnia Onescan extension
+	Copyright (C) 2014 Ensygnia Ltd
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<layout>
+    <default>
+        <reference name="head">
+        	<action method="addCss" ifconfig="onescantab/general/enabled"><stylesheet>css/onescan.css</stylesheet></action>
+        	<action method="addItem" ifconfig="onescantab/general/enabled"><type>skin_js</type><name>js/onescan.js</name></action>
+        	
+			<block type="core/text" name="ensygnia.onescan">
+				<action method="setText" ifconfig="onescantab/general/enabled">
+					<text>
+					<![CDATA[
+						<script type="text/javascript" src="http://ensygniaresources.ensygnia.net/onescan/latest/scripts/jquery-1.7.1.min.js"></script>
+						<script type="text/javascript">
+							$.noConflict();
+						</script>
+						<script type="text/javascript" src="http://ensygniaresources.ensygnia.net/onescan/latest/scripts/onescan.js"></script>
+					]]>
+					</text>
+				</action>
+			</block>
+		</reference>
+
+		<!-- we don't attach this to anything, it's just created in the root so we can conditionally attach it later -->
+		<!--block type="core/text_list" name="onescan.container" as="onescan" translate="label"-->
+			<block type="onescan/login" name="onescan.login" as="onescanlogin" translate="label" template="onescan/login.phtml">
+				<label>Onescan login module</label>
+			</block>
+
+			<block type="onescan/register" name="onescan.register" as="onescanregister" translate="label" template="onescan/register.phtml">
+				<label>Onescan register module</label>
+			</block>
+
+			<block type="onescan/basket" name="onescan.basket" as="onescanbasket" translate="label" template="onescan/basket.phtml">
+				<label>Onescan basket module</label>
+			</block>
+			
+			<block type="checkout/cart_totals" name="onescan.cart.totals" as="totals" template="checkout/cart/totals.phtml"/>
+			
+			<block type="onescan/logo" name="onescan.logo" as="onescanlogo" translate="label" template="onescan/logo.phtml">
+				<label>Onescan logo</label>
+			</block>
+		<!--/block-->
+		
+		<reference name="right">
+			<action method="insert" ifconfig="onescantab/general/show_now_accepting"><blockName>onescan.logo</blockName><siblingName>right.reports.product.viewed</siblingName><after>1</after></action>
+		</reference>
+
+		<reference name="cart_sidebar.extra_actions">
+			<action method="append" ifconfig="onescantab/general/show_on_mini_cart"><block>onescan.basket</block></action>
+		</reference>
+	</default>
+
+	<!--catalog_product_view>
+		<reference name="content">
+			<action method="append" ifconfig="onescantab/general/product_move_main"><block>onescan.container</block></action>
+		</reference>
+	</catalog_product_view-->
+
+	<checkout_cart_index>
+		<reference name="checkout.cart.top_methods">
+			<action method="unsetChildren"/>
+		</reference>
+		<reference name="checkout.cart.methods">
+			<action method="append"><block>onescan.cart.totals</block></action>
+			<action method="insert" ifconfig="onescantab/general/show_on_cart_page"><block>onescan.basket</block></action>
+		</reference>
+	</checkout_cart_index>
+
+	<customer_account_create>
+		<reference name="customer.form.register.fields.before">
+			<action method="append"><block>onescan.register</block></action>
+		</reference>
+	</customer_account_create>
+
+
+	<customer_account_login>
+		<reference name="content">
+			<action method="append"><block>onescan.login</block></action>
+		</reference>
+	</customer_account_login>
+</layout>

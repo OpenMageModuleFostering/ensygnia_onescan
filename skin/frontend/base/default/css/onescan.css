@@ -1,0 +1,94 @@
+/*
+	Ensygnia Onescan extension
+	Copyright (C) 2014 Ensygnia Ltd
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+.padlock-infotext {
+	float: none !important;
+}
+
+.block-onescan-logo-pre19 .block-title {
+	text-align:center;
+}
+
+.block-onescan-logo-pre19 .block-content {
+	margin-left:3px;
+}
+
+.onescanPadlock_basket, #onescanPadlock_login, #onescanPadlock_register {
+	margin:auto;
+	background-color:transparent;
+	width:120px !important;
+}
+
+#shopping-cart-totals-table {
+	display:none;
+}
+
+.checkout-types #shopping-cart-totals-table {
+	display:block;
+}
+
+.cart .totals .checkout-types {
+	padding:8px;
+}
+
+.cart .totals td {
+	padding:1px 0px 1px 27px;
+}
+
+.account-login {
+	float:left;
+	width:70%;
+}
+
+.block-onescan-login-pre19 {
+	float: left;
+	margin: 53px 0 0 2%;
+	width: 27%;
+	height: 410px;
+	background-color: #faf7ee;
+}
+
+.block-onescan-login-19 {
+	float: left;
+	margin: 31px 0 0 2%;
+	width: 27%;
+}
+
+.bottom .block-onescan-basket {
+	float: right;
+	margin-right: 25px;
+}
+
+.block-onescan-register-pre19 {
+	position: absolute;
+	margin: 2px 0 0 340px;
+}
+
+.block-onescan-register-19 {
+	position: absolute;
+	margin-left: 346px;
+}
+
+.block-onescan-login .block-content {
+	background-color: transparent;
+	padding-top: 18px;
+}
+
+#form-validate .fieldset {
+	width: 260px;
+}
+

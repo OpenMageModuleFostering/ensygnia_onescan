@@ -18,7 +18,7 @@
 <config>    
     <modules>
         <Ensygnia_Onescan>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
         </Ensygnia_Onescan>
     </modules>
     <global>
