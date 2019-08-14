@@ -31,8 +31,12 @@
 				<strong><span>Onescan Register</span></strong>
 			</div>
 			<div class="block-content">
-				<div id="onescanPadlock_register" class="onescanpadlock" data-sessionurl="<?php echo $this->getOnescanHelper()->getRegistrationSessionUrl(); ?>" data-polltarget="<?php echo $this->getOnescanHelper()->getSessionPollUrl(); ?>">
-
+				<div id="onescanPadlock_register"
+					class="onescanpadlock"
+					data-sessionurl="<?php echo $this->getOnescanHelper()->getRegistrationSessionUrl(); ?>" 
+					data-polltarget="<?php echo $this->getOnescanHelper()->getSessionPollUrl(); ?>"
+					data-buttononly="true"
+					data-nonescan="true">
 				</div>
 			</div>
 		</div>

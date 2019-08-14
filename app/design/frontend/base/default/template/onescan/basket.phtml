@@ -31,10 +31,14 @@
 
 		<div class="block-content">
 			<?php if ($this->hasItems()) { ?>
-				<div id="onescanPadlock_basket<?php echo $basketPadlockCount; ?>" class="onescanPadlock_basket onescanpadlock"
+				<div id="onescanPadlock_basket<?php echo $basketPadlockCount; ?>"
+					class="onescanPadlock_basket onescanpadlock"
 					data-sessionurl="<?php echo $this->getOnescanHelper()->getSessionFromBasketUrl() . '?basket=' . $basketPadlockCount; ?>"
-					data-postconfirm="postConfirm(<?php echo $basketPadlockCount; ?>);"  data-postfailed="postFailed();"
-					data-polltarget="<?php echo $this->getOnescanHelper()->getSessionPollUrl(); ?>" data-nonescan="true">
+					data-postconfirm="postConfirm(<?php echo $basketPadlockCount; ?>);"
+					data-postfailed="postFailed();"
+					data-polltarget="<?php echo $this->getOnescanHelper()->getSessionPollUrl(); ?>"
+					data-buttononly="true"
+					data-nonescan="true">
 				</div>
 			<?php } ?>
 		</div>
