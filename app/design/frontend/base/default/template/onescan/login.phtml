@@ -1,0 +1,40 @@
+<?php
+/*
+	Ensygnia Onescan extension
+	Copyright (C) 2014 Ensygnia Ltd
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+	$ver=Mage::getVersion();
+	$verArray=explode('.',$ver);
+	if ($verArray[0]>1 || $verArray[1]==9) {
+		$verstring='19';
+	} else {
+		$verstring='pre19';
+	}
+?>
+<?php if ($this->getOnescanHelper()->isEnabled()): ?>
+	<?php if (!$this->getSession()->isLoggedIn()): ?>
+		<div class="block block-onescan block-onescan-login-<?php echo $verstring; ?>">
+			<div class="block-title">
+				<strong><span>Onescan Login</span></strong>
+			</div>
+			<div class="block-content">
+				<div id="onescanPadlock_login" class="onescanpadlock" data-sessionurl="<?php echo $this->getOnescanHelper()->getLoginSessionUrl(); ?>" data-polltarget="<?php echo $this->getOnescanHelper()->getSessionPollUrl(); ?>">
+
+				</div>
+			</div>
+		</div>
+	<?php endif; ?>
+<?php endif; ?>

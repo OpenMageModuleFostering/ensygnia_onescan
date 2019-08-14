@@ -1,0 +1,52 @@
+/*
+	Ensygnia Onescan extension
+	Copyright (C) 2014 Ensygnia Ltd
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+ul.tabs a.onescan-section {
+	min-height: 39px;
+	background: transparent url('../images/logo-sml.png') no-repeat 15px center;
+	text-indent: -9999px;
+}
+
+ul.tabs a.onescan-section.active {
+	background-color: white;
+}
+
+ul.tabs a.onescan-section.active:hover {
+	background-color: #eee;	
+}
+
+ul.tabs a.onescan-section.active span {
+	background-color: transparent;
+}
+
+h3.onescan-header {
+	width: 185px;
+	height: 70px;
+	background: transparent url("../images/logo.png") no-repeat 0 0 ;
+	text-indent: -9999px;
+}
+
+.onescan-notice {
+	background: #EAF0EE;
+	border: 1px solid #CCCCCC;
+	margin-bottom: 10px;
+	padding: 12px;
+}
+
+.onescan-notice h4 {
+	margin: 0;
+}

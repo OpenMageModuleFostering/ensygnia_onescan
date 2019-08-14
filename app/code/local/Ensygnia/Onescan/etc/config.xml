@@ -1,0 +1,118 @@
+<!--
+	Ensygnia Onescan extension
+	Copyright (C) 2014 Ensygnia Ltd
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<config>    
+    <modules>
+        <Ensygnia_Onescan>
+            <version>1.0.0</version>
+        </Ensygnia_Onescan>
+    </modules>
+    <global>
+        <helpers>
+            <onescan>
+                <class>Ensygnia_Onescan_Helper</class>
+            </onescan>
+        </helpers>
+        <blocks>
+             <onescan>
+                <class>Ensygnia_Onescan_Block</class>
+             </onescan>
+        </blocks>
+		<resources>
+			<onescan_setup>
+				<setup>
+					<module>Ensygnia_Onescan</module>
+					<class>Ensygnia_Onescan_Model_Resource_Setup</class>
+				</setup>
+			</onescan_setup>
+		</resources>
+		<models>
+			<onescan>
+				<class>Ensygnia_Onescan_Model</class>
+				<resourceModel>onescan_resource</resourceModel>
+			</onescan>
+			<onescan_resource>
+				<class>Ensygnia_Onescan_Model_Resource</class>
+				<entities>
+					<sessiondata>
+						<table>onescan_session_data</table>
+					</sessiondata>
+					<logintokens>
+						<table>onescan_login_tokens</table>
+					</logintokens>
+				</entities>
+			</onescan_resource>
+		</models>
+    </global>
+    <default>
+        <onescantab>
+            <general>
+                <enabled>1</enabled>
+                <onescan_account></onescan_account>
+				<onescan_secret></onescan_secret>
+				<onescan_serverurl>https://liveservice.ensygnia.net/api/PartnerGateway/1/</onescan_serverurl>
+				<onescan_register-success-message>You have successfully registered using Onescan. We have sent you an email with your login details should you ever need to log in "manually".</onescan_register-success-message>
+				<onescan_skip-confirmation>1</onescan_skip-confirmation>
+				<onescan_email-exists-message>Email address already registered, please log in using Onescan.</onescan_email-exists-message>
+				<onescan_login-success-message>You have successfully logged in using Onescan.</onescan_login-success-message>
+				<onescan_email-not-confirmed-message>This account is not confirmed. &lt;a href="%s"&gt;Click here&lt;/a&gt; to resend confirmation email.</onescan_email-not-confirmed-message>
+				<onescan_customer-deleted-message>We cannot find your account on our system. Please use Onescan to create a new account.</onescan_customer-deleted-message>
+				<onescan_basket-name>Shopping Basket</onescan_basket-name>
+                <show_on_cart_page>1</show_on_cart_page>
+                <show_on_mini_cart>1</show_on_mini_cart>
+                <show_now_accepting>1</show_now_accepting>
+            </general>
+        </onescantab>
+        <payment>
+            <onescan>
+                <active>1</active>
+                <model>onescan/method_onescan</model>
+                <order_status>processing</order_status>
+                <title>Onescan</title>
+                <allowspecific>0</allowspecific>
+                <group>offline</group>
+            </onescan>
+		</payment>
+    </default>
+    <frontend>
+        <routers>
+            <onescan>
+                <use>standard</use>
+                <args>
+                    <module>Ensygnia_Onescan</module>
+                    <frontName>onescan</frontName>
+                </args>
+            </onescan>
+        </routers>  
+        <layout>
+            <updates>
+                <emc>
+                    <file>onescan.xml</file>
+                </emc>
+            </updates>
+        </layout>
+    </frontend>
+    <adminhtml>
+        <layout>
+            <updates>
+                <onescan>
+                    <file>onescan.xml</file>
+                </onescan>
+            </updates>
+        </layout>
+    </adminhtml>
+</config>

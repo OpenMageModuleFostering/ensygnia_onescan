@@ -1,0 +1,181 @@
+<!--
+	Ensygnia Onescan extension
+	Copyright (C) 2014 Ensygnia Ltd
+
+	This program is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<config>
+    <sections>
+        <onescantab translate="label" module="adminhtml">
+            <label>Onescan</label>
+            <class>onescan-section</class>
+            <header_css>onescan-header</header_css>
+            <tab>sales</tab>
+            <sort_order>995</sort_order>
+            <show_in_default>1</show_in_default>
+            <show_in_website>1</show_in_website>
+            <show_in_store>1</show_in_store>
+            <groups>
+                <cta>
+                    <frontend_model>onescan/adminhtml_system_config_cta</frontend_model>
+                    <sort_order>0</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                </cta>
+                <general translate="label comment">
+                    <label>General</label>
+                    <sort_order>50</sort_order>
+                    <show_in_default>1</show_in_default>
+                    <show_in_website>1</show_in_website>
+                    <show_in_store>1</show_in_store>
+                    <comment><![CDATA[Please enter the Onscan settings supplied by Ensygnia]]></comment>
+                    <fields>
+                        <enabled translate="label">
+                            <label>Enabled</label>
+                            <comment>Disable Onescan on your system</comment>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>10</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </enabled>
+                        <onescan_account translate="label comment">
+                            <label>Onescan Account Key</label>
+                            <comment>Onescan account key supplied when you created your account with Ensygnia</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>20</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </onescan_account>
+                        <onescan_secret translate="label comment">
+                            <label>Onescan Secret</label>
+                            <comment>Onescan secret supplied when you created your account with Ensygnia</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>30</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </onescan_secret>
+                        <onescan_serverurl translate="label comment">
+                            <label>Onescan Server URL</label>
+                            <comment>Onescan server URL - do not change unless instructed to do so by Ensygnia</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>40</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </onescan_serverurl>
+                        <onescan_register-success-message translate="label comment">
+                            <label>Register Success Message</label>
+                            <comment>Message to show after a successful registration</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>50</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </onescan_register-success-message>
+                        <onescan_skip-confirmation translate="label comment">
+                            <label>Skip Confirmation Email</label>
+                            <comment>Selects whether customers who register with Onescan skip the confirmation email. Has no effect if Require Emails Confirmation in Customer Configuration is set to "No".</comment>
+                            <frontend_type>select</frontend_type>
+							<source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>60</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </onescan_skip-confirmation>
+                        <onescan_email-exists-message translate="label comment">
+                            <label>Email Exists Message</label>
+                            <comment>Error message to show if a user attempts to register with an existing email address</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>70</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </onescan_email-exists-message>
+                        <onescan_login-success-message translate="label comment">
+                            <label>Login Success Message</label>
+                            <comment>Message to show after a successful login</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>80</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </onescan_login-success-message>
+                        <onescan_email-not-confirmed-message translate="label comment">
+                            <label>Email Not Confirmed Message</label>
+                            <comment>Message to show after a login attempt when email address has not been confirmed (use %s for resend email URL).</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>90</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </onescan_email-not-confirmed-message>
+                        <onescan_customer-deleted-message translate="label comment">
+                            <label>Customer Deleted Message</label>
+                            <comment>Message to show after a login attempt when customer no longer exists.</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>90</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </onescan_customer-deleted-message>
+                        <onescan_basket-name translate="label comment">
+                            <label>Shopping Basket Name</label>
+                            <comment>The name of the shopping basket that appears on the Onescanner's device.</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>100</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </onescan_basket-name>
+                        <show_on_cart_page translate="label">
+                            <label>Show Onescan on cart page</label>
+                            <comment>Display the Onescan padlock on the cart page.</comment>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>110</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </show_on_cart_page>
+                        <show_on_mini_cart translate="label">
+                            <label>Show Onescan in mini cart</label>
+                            <comment>Display the Onescan padlock in the mini cart.</comment>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>120</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </show_on_mini_cart>
+                        <show_now_accepting translate="label">
+                            <label>Show now accepting Onescan</label>
+                            <comment>Display the "Now accepting Onescan" block.</comment>
+                            <frontend_type>select</frontend_type>
+                            <source_model>adminhtml/system_config_source_yesno</source_model>
+                            <sort_order>130</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </show_now_accepting>
+                    </fields>
+                </general>
+            </groups>
+        </onescantab>
+	</sections>
+</config>
