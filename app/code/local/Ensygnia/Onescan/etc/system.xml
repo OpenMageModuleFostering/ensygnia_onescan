@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 	Ensygnia Onescan extension
 	Copyright (C) 2014 Ensygnia Ltd
@@ -79,6 +80,15 @@
                             <show_in_website>1</show_in_website>
                             <show_in_store>1</show_in_store>
                         </onescan_serverurl>
+                        <onescan_basket-logo-url translate="label comment">
+                            <label>Basket Logo URL</label>
+                            <comment>Basket logo URL - logo to appear on the Onescanner's device, 128px wide works best</comment>
+                            <frontend_type>text</frontend_type>
+                            <sort_order>45</sort_order>
+                            <show_in_default>1</show_in_default>
+                            <show_in_website>1</show_in_website>
+                            <show_in_store>1</show_in_store>
+                        </onescan_basket-logo-url>
                         <onescan_register-success-message translate="label comment">
                             <label>Register Success Message</label>
                             <comment>Message to show after a successful registration</comment>

@@ -38,32 +38,31 @@
 			switch ($nextAction)
 			{
 				case PurchaseAction::StartPayment:
-					Mage::log('Start Payment');
+					//Mage::log('Start Payment');
 					$purchasePayload = $this->BuildPurchasePayload($sessionState->SessionID);
 					$purchaseProcess->ProcessStartPurchase($purchasePayload);
 					break;
 				case PurchaseAction::AdditionalCharges:
-					Mage::log('Additional Charges');
+					//Mage::log('Additional Charges');
 					$purchaseProcess->DecodeAdditionalChargesRequest($onescanMessage);
 					$additionalChargesPayload = $this->BuildAdditionalCharges($purchaseProcess);
 					$purchaseProcess->ProcessAdditionalCharges($additionalChargesPayload);
 					break;
 				case PurchaseAction::PaymentConfirmed:
-					Mage::log('Payment Confirmed');
+					//Mage::log('Payment Confirmed');
 					$purchaseProcess->DecodePaymentConfirmed($onescanMessage);
 					$orderAcceptedPayload = $this->BuildOrderAccepted($purchaseProcess);
 					$purchaseProcess->ProcessPaymentConfirmed($orderAcceptedPayload);
 					break;
 				case PurchaseAction::PaymentFailed:
-					Mage::log('Payment Failed');
+					//Mage::log('Payment Failed');
 					$purchaseProcess->ProcessPaymentFailed();
 					break;
 				case PurchaseAction::PaymentCancelled:
-					Mage::log('Payment Cancelled');
+					//Mage::log('Payment Cancelled');
 					$purchaseProcess->ProcessPaymentCancelled();
 					break;
-			}
-			 
+			}			 
 			$responseMessage = $purchaseProcess->EncodeOutcome();
 			 
 			Onescan::SendMessage($responseMessage,$settings);
@@ -110,7 +109,7 @@
 	
 			$purchaseCharges->PaymentMethodCharge = new PaymentMethodCharge();
 			$purchaseCharges->PaymentMethodCharge->Code = "PLAY";
-			$purchaseCharges->PaymentMethodCharge->Description = "The onescan play card attracts a Â£1 surcharge";
+			$purchaseCharges->PaymentMethodCharge->Description = "The onescan play card attracts a Ã‚Â£1 surcharge";
 			$purchaseCharges->PaymentMethodCharge->Charge = new Charge();
 			$purchaseCharges->PaymentMethodCharge->Charge->BaseAmount = 1.00;
 			$purchaseCharges->PaymentMethodCharge->Charge->Tax = 0;
@@ -203,22 +202,29 @@
 			}
 
 			$purchaseCharges->DeliveryOptions = array();
+			$taxCalculation = Mage::getModel('tax/calculation');
+			$request = $taxCalculation->getRateRequest(null,null,null,$quote->getStore());
+			$taxRateId = Mage::getStoreConfig('tax/classes/shipping_tax_class',$quote->getStore());
+			$shippingTaxPercent = $taxCalculation->getRate($request->setProductClassId($taxRateId));
 
+			$defaultIndex=0;
 			foreach ($rates as $rate) {
-				$option=new DeliveryOption(); 
-				$option->Code = $rate->getCode(); 
-				$option->Description = $rate->getMethodDescription();
-				if($option->Code==$defaultCode){
-					$option->IsDefault = true;
-					$defaultIndex=count($purchaseCharges->DeliveryOptions);
-				}
-				$option->Label = $rate->getMethodTitle();
-				$option->Charge = new Charge();
 				$amount=$rate->getPrice();
-				$option->Charge->BaseAmount = $rate->getPrice();
-				$option->Charge->Tax = 0;
-				$option->Charge->TotalAmount = $rate->getPrice();
-				$purchaseCharges->DeliveryOptions[]=$option;
+				if(is_numeric($amount)){
+					$option=new DeliveryOption(); 
+					$option->Code = $rate->getCode(); 
+					$option->Description = $rate->getMethodDescription();
+					if($option->Code==$defaultCode){
+						$option->IsDefault = true;
+						$defaultIndex=count($purchaseCharges->DeliveryOptions);
+					}
+					$option->Label = $rate->getMethodTitle();
+					$option->Charge = new Charge();
+					$option->Charge->TotalAmount = $amount;
+					$option->Charge->Tax = $amount-($amount*100)/(100+$shippingTaxPercent);
+					$option->Charge->BaseAmount = $amount-$option->Charge->Tax;
+					$purchaseCharges->DeliveryOptions[]=$option;
+				}
 			}
 			
 			//Make sure the default rate is listed first
@@ -231,7 +237,8 @@
 			$onescanModel->setQuoteid($quoteid);
 			$onescanModel->setCustomerid($sessionData[0]['customerid']);
 			$onescanModel->setShippingmethod($option->Code);
-			$onescanModel->setShippingrate($option->Charge->TotalAmount);
+			$onescanModel->setShippingamount($option->Charge->TotalAmount * 100);//Floating point numbers are being stored as integers!
+			$onescanModel->setShippingtax($option->Charge->Tax * 100);//Floating point numbers are being stored as integers!
 			$onescanModel->save();
 		}
 		
@@ -271,11 +278,8 @@
 
 			$payload->Requires->Surcharges = false;
 			$payload->Requires->DeliveryOptions=true;
-			$filename = Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_SKIN).'frontend/' .
-						Mage::getSingleton('core/design_package')->getPackageName() . '/' . 
-						Mage::getSingleton('core/design_package')->getTheme('frontend') . '/' .
-						Mage::getStoreConfig('design/header/logo_src');
-			$payload->ImageData = base64_encode(file_get_contents($filename));
+
+			$payload->ImageData = Mage::getStoreConfig('onescantab/general/onescan_basket-logo-url');
 		 
 			return $payload;
 		}
@@ -292,7 +296,8 @@
 			$quoteid=$sessionData[0]['quoteid'];
 			$customerid=$sessionData[0]['customerid'];
 			$shippingMethod=$sessionData[0]['shippingmethod'];
-			$shippingRate=$sessionData[0]['shippingrate'];
+			$shippingAmount=round($sessionData[0]['shippingamount'],2,PHP_ROUND_HALF_DOWN)/100;//Floating point numbers are being stored as integers!
+			$shippingTax=round($sessionData[0]['shippingtax'],2,PHP_ROUND_HALF_DOWN)/100;//Floating point numbers are being stored as integers!
 			
 			$cart=Mage::getModel('checkout/cart')->getCheckoutSession();
 			$cart->setQuoteId($quoteid);
@@ -402,32 +407,41 @@
 			$quote->getPayment()->importData(array('method' => 'onescan'));
 
 			foreach($quote->getAllItems() as $item){
-				$totalPrice=$item->getProduct()->getFinalPrice()*$item->getQty();
-				$taxAmount=$totalPrice-$item->getPrice();
+				$totalPrice=round($item->getProduct()->getFinalPrice(),2,PHP_ROUND_HALF_DOWN)*$item->getQty();
+				$taxAmount=round($totalPrice-$item->getPrice(),2,PHP_ROUND_HALF_DOWN);
 				$item->setTaxAmount($taxAmount);
 				$item->setTaxPercent(round($taxAmount*100/($totalPrice-$taxAmount),2));
 			}
 			
 			//Add postage to quote
-			$totals['grand_total']->setValue(round($totals['grand_total']->getValue()+$shippingRate,2,PHP_ROUND_HALF_DOWN));
+			$totals['grand_total']->setValue(round($totals['grand_total']->getValue(),2,PHP_ROUND_HALF_DOWN));
 			
 			$quote->setIsActive(0);
 			$quote->save();
-       
+
 			$service = Mage::getModel('sales/service_quote', $quote);
 			$service->submitAll();
 			$order = $service->getOrder();
 
-			//$order->setShippingMethod($shippingMethod);
-			
-			if(isset($totals['tax']) && $totals['tax']->getValue()) {
-				$order->setTaxAmount(round($totals['tax']->getValue(),2,PHP_ROUND_HALF_DOWN));
-				$order->setBaseTaxAmount(round($totals['tax']->getValue(),2,PHP_ROUND_HALF_DOWN));
-				$order->setGrandTotal(round($totals['grand_total']->getValue(),2,PHP_ROUND_HALF_DOWN));
-				$order->setBaseGrandTotal(round($totals['grand_total']->getValue(),2,PHP_ROUND_HALF_DOWN));
-			}
+			$order->setShippingMethod($shippingMethod);
 
-			$order->getPayment()->capture(NULL);
+			$amountCharged=$process->PaymentConfirmation->AmountCharged;
+			$order	->setSubtotal($amountCharged->BasketAmount)
+				->setSubtotalIncludingTax($amountCharged->BasePaymentAmount)
+				->setBaseSubtotal($amountCharged->BasketAmount)
+				->setGrandTotal($amountCharged->PaymentAmount)
+				->setBaseGrandTotal($amountCharged->PaymentAmount)
+				->setBaseTaxAmount(round($amountCharged->BasketTax+$shippingTax,2,PHP_ROUND_HALF_DOWN))
+				->setTaxAmount(round($amountCharged->BasketTax+$shippingTax,2,PHP_ROUND_HALF_DOWN));
+
+
+			/*$order->setTaxAmount($process->PaymentConfirmation->AmountCharged->BasketTax+$shippingTax);
+			$order->setBaseTaxAmount($process->PaymentConfirmation->AmountCharged->BasketTax+$shippingTax);
+			$order->setSubtotalIncludingTax($process->PaymentConfirmation->Amou)
+			$order->setGrandTotal($process->PaymentConfirmation->AmountCharged->PaymentAmount);
+			$order->setBaseGrandTotal($process->PaymentConfirmation->AmountCharged->PaymentAmount);*/
+
+			$order->getPayment()->capture();
 			
 			$order->place();
 			$order->save();

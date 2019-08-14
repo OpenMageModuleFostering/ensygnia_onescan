@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
 	Ensygnia Onescan extension
 	Copyright (C) 2014 Ensygnia Ltd
@@ -20,20 +21,6 @@
         <reference name="head">
         	<action method="addCss" ifconfig="onescantab/general/enabled"><stylesheet>css/onescan.css</stylesheet></action>
         	<action method="addItem" ifconfig="onescantab/general/enabled"><type>skin_js</type><name>js/onescan.js</name></action>
-        	
-			<block type="core/text" name="ensygnia.onescan">
-				<action method="setText" ifconfig="onescantab/general/enabled">
-					<text>
-					<![CDATA[
-						<script type="text/javascript" src="//ensygniaresources.ensygnia.net/onescan/latest/scripts/jquery-1.7.1.min.js"></script>
-						<script type="text/javascript">
-							$.noConflict();
-						</script>
-						<script type="text/javascript" src="//ensygniaresources.ensygnia.net/onescan/latest/scripts/onescan.js"></script>
-					]]>
-					</text>
-				</action>
-			</block>
 		</reference>
 
 		<!-- we don't attach this to anything, it's just created in the root so we can conditionally attach it later -->
@@ -50,7 +37,7 @@
 				<label>Onescan basket module</label>
 			</block>
 			
-			<block type="checkout/cart_totals" name="onescan.cart.totals" as="totals" template="checkout/cart/totals.phtml"/>
+			<block type="checkout/cart_totals" name="onescan.cart.totals" as="totals" template="checkout/cart/totals.phtml"></block>
 			
 			<block type="onescan/logo" name="onescan.logo" as="onescanlogo" translate="label" template="onescan/logo.phtml">
 				<label>Onescan logo</label>
