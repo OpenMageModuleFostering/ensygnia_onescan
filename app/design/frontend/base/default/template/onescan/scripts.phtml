@@ -1,3 +1,4 @@
+<?php
 /*
 	Ensygnia Onescan extension
 	Copyright (C) 2014 Ensygnia Ltd
@@ -15,23 +16,10 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
-function postConfirm(basket) {
-	// Redirect to purchase success page
-	if(typeof(magentobase)=='undefined'){
-		window.setTimeout(postConfirm(basket),250);
-	}else{
-		if (basket==0){
-			window.location.assign(magentobase + 'onescan/index/purchasesuccess');
-		} else {
-			window.location.assign(magentobase + 'onescan/index/purchasesuccess/?basket=' + basket);
-		}
-	}
-}		 
- 
-
-function postFailed() {
-	// Redirect to failure page
-	alert('Failed!');
-	//window.location.assign(location.href+'?confirm=false');
-}
+?>
+<script type="text/javascript" src="//onescanresources.ensygnia.net/onescan/latest/scripts/jquery-1.11.1.min.js"></script>
+<script type="text/javascript">jQuery.noConflict();</script>
+<script type="text/javascript" src="//onescanresources.ensygnia.net/onescan/latest/scripts/onescan.js"></script>
+<script type="text/javascript">
+	var magentobase='<?php echo Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_LINK); ?>';
+</script>

@@ -22,6 +22,9 @@ class Ensygnia_Onescan_Model_Method_Onescan extends Mage_Payment_Model_Method_Ab
     protected $_code  = 'onescan';
     //protected $_formBlockType = 'payment/form_checkmo';
     //protected $_infoBlockType = 'payment/info_checkmo';
+	protected $_canUseInternal              = true;
+	protected $_canUseCheckout              = false; 
+	protected $_canUseForMultishipping      = false;
 
     /**
      * Assign data to info model instance

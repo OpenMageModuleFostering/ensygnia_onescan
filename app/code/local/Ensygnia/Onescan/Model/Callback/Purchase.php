@@ -30,7 +30,7 @@
 			}
 			
 			$onescanMessage = Onescan::ReadMessage($settings);
-			
+
 			$purchaseProcess = new OnescanPurchaseProcess();
 			$nextAction = $purchaseProcess->DecodePurchaseMessage($onescanMessage);
 			$sessionState = $purchaseProcess->SessionState();
@@ -38,31 +38,34 @@
 			switch ($nextAction)
 			{
 				case PurchaseAction::StartPayment:
+					//Mage::log('Start Payment');
 					$purchasePayload = $this->BuildPurchasePayload($sessionState->SessionID);
 					$purchaseProcess->ProcessStartPurchase($purchasePayload);
 					break;
 				case PurchaseAction::AdditionalCharges:
+					//Mage::log('Additional Charges');
 					$purchaseProcess->DecodeAdditionalChargesRequest($onescanMessage);
 					$additionalChargesPayload = $this->BuildAdditionalCharges($purchaseProcess);
 					$purchaseProcess->ProcessAdditionalCharges($additionalChargesPayload);
 					break;
 				case PurchaseAction::PaymentConfirmed:
+					//Mage::log('Payment Confirmed');
 					$purchaseProcess->DecodePaymentConfirmed($onescanMessage);
 					$orderAcceptedPayload = $this->BuildOrderAccepted($purchaseProcess);
 					$purchaseProcess->ProcessPaymentConfirmed($orderAcceptedPayload);
 					break;
 				case PurchaseAction::PaymentFailed:
+					//Mage::log('Payment Failed');
 					$purchaseProcess->ProcessPaymentFailed();
 					break;
 				case PurchaseAction::PaymentCancelled:
+					//Mage::log('Payment Cancelled');
 					$purchaseProcess->ProcessPaymentCancelled();
 					break;
-			}
-			 
+			}			 
 			$responseMessage = $purchaseProcess->EncodeOutcome();
 			 
 			Onescan::SendMessage($responseMessage,$settings);
-
 			return parent::handle();
 		}
 
@@ -74,11 +77,18 @@
 			$requires=$process->PurchaseInfo->Requires;
 			$purchaseCharges = new AdditionalChargesPayload();
 	
-			if ($requires->DeliveryOptions && !empty($additionalChargesContext->DeliveryAddress))
-				$this->AddDeliveryCharges($additionalChargesContext->DeliveryAddress,$purchaseCharges,$process);
+			if ($requires->DeliveryOptions && !empty($additionalChargesContext->DeliveryAddress)){
+				if(!$this->AddDeliveryCharges($additionalChargesContext->DeliveryAddress,$purchaseCharges,$process)){
+					$purchaseCharges->AddressNotSupported=1;
+					$purchaseCharges->AddressNotSupportedReason=Mage::getStoreConfig('onescantab/general/onescan_cannot-deliver-message');
+				}
+			}
 	
-			if ($requires->Surcharges && !empty($additionalChargesContext->PaymentMethod)) 
-				$this->AddPaymentMethodCharges($additionalChargesContext->PaymentMethod,$purchaseCharges,$process);
+			if ($requires->Surcharges && !empty($additionalChargesContext->PaymentMethod)){
+				if(!$this->AddPaymentMethodCharges($additionalChargesContext->PaymentMethod,$purchaseCharges,$process)){
+					//REPORT SURCHARGES ERROR TO DEVICE;
+				}
+			}
 					
 			return $purchaseCharges;
 		}
@@ -95,6 +105,7 @@
 					$this->HandlePlayCardCharges($paymentMethod,$purchaseCharges,$process);
 					break;
 			}
+			return true;
 		}
 
 		/// <summary>
@@ -105,7 +116,7 @@
 	
 			$purchaseCharges->PaymentMethodCharge = new PaymentMethodCharge();
 			$purchaseCharges->PaymentMethodCharge->Code = "PLAY";
-			$purchaseCharges->PaymentMethodCharge->Description = "The onescan play card attracts a £1 surcharge";
+			$purchaseCharges->PaymentMethodCharge->Description = "The onescan play card attracts a Ã‚Â£1 surcharge";
 			$purchaseCharges->PaymentMethodCharge->Charge = new Charge();
 			$purchaseCharges->PaymentMethodCharge->Charge->BaseAmount = 1.00;
 			$purchaseCharges->PaymentMethodCharge->Charge->Tax = 0;
@@ -146,41 +157,101 @@
 			$cart=Mage::getModel('checkout/cart')->getCheckoutSession();
 			$cart->setQuoteId($quoteid);
 			$quote=$cart->getQuote();
-			$quote->getShippingAddress()->setCountryId(Mage::app()->getLocale()->getCountryTranslation(Mage::getStoreConfig('general/country/default')));
-			$quote->getShippingAddress()->collectTotals();
-			$quote->getShippingAddress()->setCollectShippingRates(true);
-			$quote->getShippingAddress()->collectShippingRates();
-			$rates = $quote->getShippingAddress()->getShippingRatesCollection();
 			
-			$purchaseCharges->DeliveryOptions = array();
-			foreach ($rates as $rate) {
-				$option=new DeliveryOption(); 
-				$option->Code = $rate->getCode(); 
-				$option->Description = $rate->getMethodDescription();
-				if (count($purchaseCharges->DeliveryOptions)==0) {
-					$option->IsDefault = true;
+			/*if ($quote->getCouponCode() != '') {
+				$c = Mage::getResourceModel('salesrule/rule_collection');
+				$c->getSelect()->where("code=?", $quote->getCouponCode());
+				foreach ($c->getItems() as $item) {
+					$coupon = $item;
 				}
-				$option->Label = $rate->getMethodTitle();
-				$option->Charge = new Charge(); 
-				$option->Charge->BaseAmount = $rate->getPrice();
-				$option->Charge->Tax = 0;
-				$option->Charge->TotalAmount = $rate->getPrice();
-				$purchaseCharges->DeliveryOptions[]=$option;
+				if ($coupon->getSimpleFreeShipping() > 0) {
+					$quote->getShippingAddress()->setShippingMethod($this->_shippingCode)->save();
+					return true;
+				}
+			}*/
+			try {
+				if ($quote->getShippingAddress()->getCountryId() == '') {
+					$quote->getShippingAddress()->setCountryId($address->CountryCode);
+				}
+				if ($quote->getShippingAddress()->getPostcode() == '') {
+					$quote->getShippingAddress()->setPostcode($address->Postcode);
+				}
+				$quote->getShippingAddress()->collectTotals();
+				$quote->getShippingAddress()->setCollectShippingRates(true);
+				$quote->getShippingAddress()->collectShippingRates();
+				$rates = $quote->getShippingAddress()->getShippingRatesCollection();
 			}
-			
-			//Temporary fix: Save first shipping rate found
-			//Once we can select shipping rate on device we can save the selected shipping rate.
-			$option=$purchaseCharges->DeliveryOptions[0];
+			catch (Mage_Core_Exception $e) {
+				Mage::getSingleton('checkout/session')->addError($e->getMessage());
+			}
+			catch (Exception $e) {
+				Mage::getSingleton('checkout/session')->addException($e, Mage::helper('checkout')->__('Load customer quote error'));
+			}
+
+			$allowedRates=array();
+			$lowestPrice=99999;
+			foreach ($rates as $rate){
+				$rateCode=$rate->getCode();
+				if($quote->getShippingAddress()->collectShippingRates()->getShippingRateByCode($rateCode)){
+					$allowedRates[$rateCode]=$rate; //Using $rateCode as key removes duplicates
+				}
+
+				//Set the lowest rate as the default
+				if($rate->getPrice()<$lowestPrice){
+					$lowestPrice=$rate->getPrice();
+					$defaultCode=$rateCode;
+				}
+			}
+
+			$purchaseCharges->DeliveryOptions = array();
+			$taxCalculation = Mage::getModel('tax/calculation');
+			$request = $taxCalculation->getRateRequest(null,null,null,$quote->getStore());
+			$taxRateId = Mage::getStoreConfig('tax/classes/shipping_tax_class',$quote->getStore());
+			$shippingTaxPercent = $taxCalculation->getRate($request->setProductClassId($taxRateId));
+
+			$defaultIndex=0;
+			foreach ($rates as $rate) {
+				$amount=$rate->getPrice();
+				if(is_numeric($amount)){
+					$option=new DeliveryOption(); 
+					$option->Code = $rate->getCode(); 
+					$option->Description = $rate->getMethodDescription();//CheckThis
+					if($option->Code==$defaultCode){
+						$option->IsDefault = true;
+						$defaultIndex=count($purchaseCharges->DeliveryOptions);
+					}
+					$option->Label = $rate->getMethodTitle();
+					$option->Charge = new Charge();
+					$option->Charge->TotalAmount = $amount;
+					$option->Charge->Tax = $amount-($amount*100)/(100+$shippingTaxPercent);
+					$option->Charge->BaseAmount = $amount-$option->Charge->Tax;
+					$purchaseCharges->DeliveryOptions[]=$option;
+				}
+			}
+
+			if(count($purchaseCharges->DeliveryOptions)==0){
+				//NO SHIPPING RATES AVAILABLE FOR THIS ORDER
+				return false;
+			}
+
+			//Make sure the default rate is listed first
+			$option=$purchaseCharges->DeliveryOptions[$defaultIndex];
+			$purchaseCharges->DeliveryOptions[$defaultIndex]=$purchaseCharges->DeliveryOptions[0];
+			$purchaseCharges->DeliveryOptions[0]=$option;
+
 			$onescanModel->setId($sessionData[0]['sessiondata_id']);
 			$onescanModel->setSessionid($process->SessionState()->SessionID);
 			$onescanModel->setQuoteid($quoteid);
 			$onescanModel->setCustomerid($sessionData[0]['customerid']);
 			$onescanModel->setShippingmethod($option->Code);
-			$onescanModel->setShippingrate($option->Charge->TotalAmount);
+			$onescanModel->setShippingamount($option->Charge->TotalAmount * 100);//Floating point numbers are being stored as integers!
+			$onescanModel->setShippingtax($option->Charge->Tax * 100);//Floating point numbers are being stored as integers!
 			$onescanModel->save();
+
+			return true;
 		}
 		
-		public function BuildPurchasePayload($sessionID) {			
+		public function BuildPurchasePayload($sessionID) {
 			$onescanData = Mage::getModel('onescan/sessiondata')->getCollection();
 			$onescanData->addFieldToFilter('sessionid', array('like' => $sessionID));
 			$onescanData->load();
@@ -209,17 +280,15 @@
  				$payload->Tax = 0;
 			}
 			$payload->ProductAmount = $totals['subtotal']->getValue()-$payload->Tax;
-			$payload->PaymentAmount = $totals['grand_total']->getValue();
+			$payload->PaymentAmount = $totals['subtotal']->getValue();
 			$payload->Currency = Mage::app()->getStore($storeid)->getCurrentCurrencyCode();
 	
 			$payload->Requires = new PaymentOptIns();
-			$payload->Requires->DeliveryOptions = true;
+
 			$payload->Requires->Surcharges = false;
-			$filename = Mage::getBaseUrl(Mage_Core_Model_Store::URL_TYPE_SKIN).'frontend/' .
-						Mage::getSingleton('core/design_package')->getPackageName() . '/' . 
-						Mage::getSingleton('core/design_package')->getTheme('frontend') . '/' .
-						Mage::getStoreConfig('design/header/logo_src');
-			$payload->ImageData = base64_encode(file_get_contents($filename));
+			$payload->Requires->DeliveryOptions=true;
+
+			$payload->ImageData = Mage::getStoreConfig('onescantab/general/onescan_basket-logo-url');
 		 
 			return $payload;
 		}
@@ -236,7 +305,8 @@
 			$quoteid=$sessionData[0]['quoteid'];
 			$customerid=$sessionData[0]['customerid'];
 			$shippingMethod=$sessionData[0]['shippingmethod'];
-			$shippingRate=$sessionData[0]['shippingrate'];
+			$shippingAmount=round($sessionData[0]['shippingamount'],2,PHP_ROUND_HALF_DOWN)/100;//Floating point numbers are being stored as integers!
+			$shippingTax=round($sessionData[0]['shippingtax'],2,PHP_ROUND_HALF_DOWN)/100;//Floating point numbers are being stored as integers!
 			
 			$cart=Mage::getModel('checkout/cart')->getCheckoutSession();
 			$cart->setQuoteId($quoteid);
@@ -322,7 +392,6 @@
 				$quote->assignCustomer($customer);
 			}
 
-			$country=Mage::app()->getLocale()->getCountryTranslation(Mage::getStoreConfig('general/country/default'));
 			$addressData = array(
 				'firstname' => $process->PaymentConfirmation->FirstName,
 				'lastname' => $process->PaymentConfirmation->LastName,
@@ -330,46 +399,84 @@
 				'city' => $process->PaymentConfirmation->DeliveryAddress->Town,
 				'postcode' => $process->PaymentConfirmation->DeliveryAddress->Postcode,
 				'telephone' => '0',
-				'country_id' => $country,
-				'region_id' => 0,
+				'country_id' => $process->PaymentConfirmation->DeliveryAddress->CountryCode,
 			);
+
+			$regions=Mage::getModel('directory/region')
+				->getResourceCollection()
+				->addCountryFilter($process->PaymentConfirmation->DeliveryAddress->CountryCode)
+				->load();
+
+			$regionMatch=false;
+			foreach($regions as $region){
+				$regionName=$region->default_name;
+				$regionId=$region->region_id;
+				if(stripos($region->default_name,$process->PaymentConfirmation->DeliveryAddress->County)!==false ||
+				strcasecmp($process->PaymentConfirmation->DeliveryAddress->County,$region->code)==0 ||
+				//Use first region if county is empty
+				$process->PaymentConfirmation->DeliveryAddress->County==''){
+					$addressData['region']=$region->default_name;
+					$addressData['region_id']=$region->region_id;
+					$regionMatch=true;
+					break;
+				}
+			}
+			if(!$regionMatch){
+				$addressData['region']=$regionName;
+				$addressData['region_id']=$regionId;
+			}
+
 			$billingAddress = $quote->getBillingAddress()->addData($addressData);
 			$shippingAddress = $quote->getShippingAddress()->addData($addressData);
 			$shippingAddress->setCollectShippingRates(true)->collectShippingRates()
 				->setShippingMethod($shippingMethod)
 				->setPaymentMethod('onescan');
 			
+			$quote->getShippingAddress()->collectTotals();
+
 			$quote->getPayment()->importData(array('method' => 'onescan'));
-			
-			$quote->collectTotals();
-			
+
+			foreach($quote->getAllItems() as $item){
+				$totalPrice=round($item->getProduct()->getFinalPrice(),2,PHP_ROUND_HALF_DOWN)*$item->getQty();
+				$taxAmount=round($totalPrice-$item->getPrice(),2,PHP_ROUND_HALF_DOWN);
+				$item->setTaxAmount($taxAmount);
+				$item->setTaxPercent(round($taxAmount*100/($totalPrice-$taxAmount),2));
+			}
+
 			//Add postage to quote
-			$totals['grand_total']->setValue($totals['grand_total']->getValue()+$shippingRate);
+			$totals['grand_total']->setValue(round($totals['grand_total']->getValue(),2,PHP_ROUND_HALF_DOWN));
 			
 			$quote->setIsActive(0);
 			$quote->save();
-			
+
 			$service = Mage::getModel('sales/service_quote', $quote);
 			$service->submitAll();
+
 			$order = $service->getOrder();
-			
-			if(isset($totals['tax']) && $totals['tax']->getValue()) {
-				$order->setTaxAmount($totals['tax']->getValue());
-				$order->setBaseTaxAmount($totals['tax']->getValue());
-				$order->setGrandTotal($totals['grand_total']->getValue());
-				$order->setBaseGrandTotal($totals['grand_total']->getValue());
-			}
+			$order->setShippingMethod($shippingMethod);
+
+			$amountCharged=$process->PaymentConfirmation->AmountCharged;
+			$order	->setSubtotal($amountCharged->BasketAmount)
+				->setSubtotalIncludingTax($amountCharged->BasePaymentAmount)
+				->setBaseSubtotal($amountCharged->BasketAmount)
+				->setGrandTotal($amountCharged->PaymentAmount)
+				->setBaseGrandTotal($amountCharged->PaymentAmount)
+				->setBaseTaxAmount(round($amountCharged->BasketTax+$shippingTax,2,PHP_ROUND_HALF_DOWN))
+				->setTaxAmount(round($amountCharged->BasketTax+$shippingTax,2,PHP_ROUND_HALF_DOWN));
+
+			$order->getPayment()->capture(null);
 			
 			$order->place();
 			$order->save();
 			$order->sendNewOrderEmail();
-			
+
 			$quote->setIsActive(false);
 			$quote->delete();
-			
+
 			$orderAccepted = new OrderAcceptedPayload();
 			$orderAccepted->ReceiptId = $process->ProcessId();
 			$orderAccepted->OrderId = $order->getIncrementId();
+
 			return $orderAccepted;
 		}
 

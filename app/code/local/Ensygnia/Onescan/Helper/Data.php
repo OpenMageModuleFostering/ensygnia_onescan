@@ -91,44 +91,30 @@
 		}
 
 		public function getLoginCallbackUrl() {
-			//str_replace('/OnescanLoginConfig.php','',str_replace('/index.php','',Mage::helper('core/url')->getHomeUrl())) . 'app/code/local/Ensygnia/Onescan/controllers/OnescanLoginCallback.php';
-
 			return Mage::getUrl('onescan/callback/login');
 		}
 
 		public function getRegistrationCallbackUrl() {
-			//str_replace('/OnescanRegistrationConfig.php','', str_replace('/index.php','',Mage::helper('core/url')->getHomeUrl())) . 'app/code/local/Ensygnia/Onescan/controllers/OnescanRegistrationCallback.php'
-
 			return Mage::getUrl('onescan/callback/registration');
 		}
 
 		public function getPurchaseCallbackUrl() {
-			//str_replace('/OnescanPurchaseConfig.php','',str_replace('/index.php','',Mage::helper('core/url')->getHomeUrl())) . 'app/code/local/Ensygnia/Onescan/controllers/OnescanPurchaseCallback.php'
-
 			return Mage::getUrl('onescan/callback/purchase');
 		}
 
 		public function getLogoSrcUrl() {
-			//str_replace('/index.php','',Mage::helper('core/url')->getHomeUrl()) . $this->getHelper()->getLogoSrc();
-
 			return Mage::getUrl($this->getLogoSrc());
 		}
 
 		public function getLoginSuccessUrl() {
-			//str_replace('OnescanLoginCallback.php','index.php',Mage::helper('core/url')->getHomeUrl()) .'onescan/index/loginsuccess';
-
 			return Mage::getUrl('onescan/index/loginsuccess');
 		}
 
 		public function getLoginFailureUrl() {
-			//str_replace('OnescanLoginCallback.php','index.php',Mage::helper('core/url')->getHomeUrl()) . 'onescan/index/loginfailure';
-
 			return Mage::getUrl('onescan/index/loginfailure');
 		}
 
 		public function getEmailConfirmationUrl($username) {
-			//str_replace('OnescanRegistrationCallback.php','index.php', Mage::helper('customer')->getEmailConfirmationUrl($credentials->Username));
-
 			return Mage::helper('customer')->getEmailConfirmationUrl($username);
 		}
 		
@@ -141,21 +127,18 @@
 		}
 
 		public function getSessionFromBasketUrl() {
-			//Mage::helper('core/url')->getHomeUrl() . 'onescan/index/createsessionfrombasket';
-			
-			return Mage::getUrl('onescan/index/createsessionfrombasket');
+			return str_ireplace(array('http://','https://'),'//',
+				Mage::getUrl('onescan/index/createsessionfrombasket'));
 		}
 
 		public function getLoginSessionUrl() {
-			//Mage::helper('core/url')->getHomeUrl() . 'onescan/index/createloginsession";
-
-			return Mage::getUrl('onescan/index/createloginsession');
+			return str_ireplace(array('http://','https://'),'//',
+				Mage::getUrl('onescan/index/createloginsession'));
 		}
 
 		public function getRegistrationSessionUrl() {
-			//Mage::helper('core/url')->getHomeUrl() . 'onescan/index/createregistrationsession";
-
-			return Mage::getUrl('onescan/index/createregistrationsession');
+			return str_ireplace(array('http://','https://'),'//',
+				Mage::getUrl('onescan/index/createregistrationsession'));
 		}
 	}
 ?>
