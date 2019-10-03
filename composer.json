@@ -1,16 +1,19 @@
 {
-    "name": "OpenMageModuleFostering/Ensygnia_Onescan",
+    "name": "OpenMageModuleFostering\/Ensygnia_Onescan",
     "type": "magento-module",
     "license": "GPL",
     "homepage": "",
     "description": "Ensygnia's Onescan payment plugin allows online market shops to accept mobile payments in just one scan. Visitors no longer have to complete long registration forms or jump through security hoops in a long checkout process. Using their mobile phone, all customers have to do is scan our Onescan padlock using our Onescan app at checkout. With one scan of a padlock and in under 10 seconds payment is securely completed.",
     "authors": [
-    {
-        "name": "Ensygnia",
-        "email": "paul.newson@ensygnia.com"
-    }
-],
+        {
+            "name": "Ensygnia",
+            "email": "paul.newson@ensygnia.com"
+        }
+    ],
     "suggest": {
-        "magento-hackathon/magento-composer-installer": "*"
-    }
+        "magento-hackathon\/magento-composer-installer": "*"
+    },
+    "keywords": [
+        "openmage-module"
+    ]
 }
